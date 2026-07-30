@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { useRoomStore } from "../store/roomStore";
@@ -25,9 +26,6 @@ export function GamePage() {
   const hasHidden = useGameStore((s) => s.hasHidden);
   const mantriId = useGameStore((s) => s.mantriId);
   const showResult = useGameStore((s) => s.showResult);
-  const revealedRoles = useGameStore((s) => s.revealedRoles);
-  const lastRoundResult = useGameStore((s) => s.lastRoundResult);
-  const currentScores = useGameStore((s) => s.currentScores);
   const currentTotals = useGameStore((s) => s.currentTotals);
   const winnerId = useGameStore((s) => s.winnerId);
   const winnerName = useGameStore((s) => s.winnerName);
@@ -43,7 +41,6 @@ export function GamePage() {
 
   const isHost = room?.hostId === playerId;
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-  const [hoveredCell, setHoveredCell] = useState<{ rect: DOMRect; role: GameRole; round: number } | null>(null);
 
   useEffect(() => {
     if (!room) {
@@ -107,7 +104,6 @@ export function GamePage() {
     );
   }
 
-  const mantri = mantriId ? room.players.find((p) => p.id === mantriId) : null;
   const rajaRevealed = room.players.some((p) => p.publicRole === "raja");
 
   const hiddenPlayers = room.players.filter(
@@ -135,10 +131,6 @@ export function GamePage() {
             {phase === "shuffling" && "Shuffling Cards..."}
             {phase === "card-distribution" && "Cards Distributed"}
             {phase === "card-reveal" && "Your Card"}
-            {phase === "mantri-reveal" && "Mantri Revealed"}
-            {phase === "guessing" && "Mantri is Choosing"}
-            {phase === "reveal-roles" && "Revealing All Roles"}
-            {phase === "score-update" && "Round Result"}
             {phase === "leaderboard" && "Leaderboard"}
             {phase === "finished" && "Game Over"}
             {phase === "waiting" && "Ready to Play"}
@@ -238,65 +230,18 @@ export function GamePage() {
                 Ask: Who is my Mantri?
               </Button>
             )}
-          </Card>
-        )}
 
-        {/* Phase: mantri-reveal */}
-        {phase === "mantri-reveal" && mantri && (
-          <Card>
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.6 }}
-              className="space-y-4"
-            >
-              <div className="text-6xl mb-2">{ROLE_EMOJIS.mantri}</div>
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mx-auto"
-                style={{ backgroundColor: mantri.avatarColor }}
+            {myRole === "mantri" && phase === "guessing" && (
+              <Button
+                variant="ghost"
+                className="w-full mt-3 border border-purple-500/30 text-purple-300 hover:bg-purple-500/10"
+                onClick={() => {
+                  const modal = document.getElementById("mantri-modal");
+                  if (modal) modal.classList.remove("hidden");
+                }}
               >
-                {mantri.name.charAt(0).toUpperCase()}
-              </div>
-              <p className="text-xl font-bold" style={{ color: ROLE_COLORS.mantri }}>
-                Mantri
-              </p>
-              <p className="text-text-secondary">{mantri.name}</p>
-            </motion.div>
-          </Card>
-        )}
-
-        {/* Phase: guessing */}
-        {phase === "guessing" && (
-          <Card>
-            {myRole === "mantri" ? (
-              <>
-                <p className="text-4xl mb-2">{ROLE_EMOJIS.mantri}</p>
-                <p className="text-lg font-semibold mb-1" style={{ color: ROLE_COLORS.mantri }}>
-                  You are the Mantri
-                </p>
-                <p className="text-text-secondary text-sm mb-4">
-                  Identify the Chor
-                </p>
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    const modal = document.getElementById("mantri-modal");
-                    if (modal) modal.classList.remove("hidden");
-                  }}
-                >
-                  Identify the Chor
-                </Button>
-              </>
-            ) : (
-              <div className="text-center space-y-2">
-                <p className="text-5xl mb-2">{ROLE_EMOJIS.mantri}</p>
-                <p className="text-text-secondary font-medium">
-                  Mantri is identifying the Chor...
-                </p>
-                <p className="text-text-muted text-sm">
-                  Please wait while the Mantri makes a decision.
-                </p>
-              </div>
+                Identify the Chor
+              </Button>
             )}
           </Card>
         )}
@@ -373,100 +318,35 @@ export function GamePage() {
           </motion.div>
         )}
 
-        {/* Phase: reveal-roles */}
-        {phase === "reveal-roles" && revealedRoles && (
-          <div className="space-y-4">
-            {room.players.map((p) => {
-              const role = revealedRoles[p.id];
-              if (!role) return null;
-              const isMe = p.id === playerId;
-              return (
-                <motion.div
-                  key={p.id}
-                  initial={{ rotateY: 180, opacity: 0 }}
-                  animate={{ rotateY: 0, opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="glass rounded-xl px-4 py-3 flex items-center gap-3"
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
-                    style={{ backgroundColor: p.avatarColor }}
-                  >
-                    {p.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="font-medium truncate">
-                      {p.name} {isMe && <span className="text-text-muted text-xs">(You)</span>}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{ROLE_EMOJIS[role]}</span>
-                    <span className="text-sm font-semibold" style={{ color: ROLE_COLORS[role] }}>
-                      {ROLE_LABELS[role]}
-                    </span>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* Phase: score-update */}
-        {phase === "score-update" && lastRoundResult && currentScores && (
-          <Card>
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="space-y-4"
-            >
-              <p className={`text-2xl font-bold ${lastRoundResult.isCorrect ? "text-emerald" : "text-rose"}`}>
-                {lastRoundResult.isCorrect ? "Correct Guess! ✓" : "Wrong Guess! ✗"}
-              </p>
-              <div className="space-y-2">
-                {room.players.map((p) => {
-                  const score = currentScores[p.id] ?? 0;
-                  const total = currentTotals?.[p.id] ?? p.totalScore;
-
-                  return (
-                    <div
-                      key={p.id}
-                      className="glass rounded-xl px-4 py-3 flex items-center gap-3"
-                    >
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
-                        style={{ backgroundColor: p.avatarColor }}
-                      >
-                        {p.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="font-medium truncate">{p.name}</p>
-                        <p className="text-xs text-text-muted">
-                          Total: {total}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-lg font-bold ${score >= 0 ? "text-emerald" : "text-rose"}`}>
-                          {score >= 0 ? "+" : ""}{score}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </Card>
-        )}
 
         {/* Phase: leaderboard */}
         {(phase === "leaderboard") && (
           <div className="flex flex-col" style={{ maxHeight: "calc(100vh - 12rem)" }}>
-            <div className="flex-1 overflow-y-auto space-y-5 pr-1">
-              <ScoreTable
-                players={room.players}
-                roundHistory={room.roundHistory}
-                currentTotals={currentTotals ?? {}}
-                playerId={playerId}
-              />
+            <div className="flex-1 overflow-y-auto space-y-6 pr-1">
+              <div className="text-left">
+                <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
+                  <span className="text-xl">🏆</span> Current Rankings
+                </h3>
+                <RankingCards
+                  players={room.players}
+                  roundHistory={room.roundHistory}
+                  currentTotals={currentTotals ?? {}}
+                  playerId={playerId}
+                />
+              </div>
+
+              <div className="text-left">
+                <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
+                  <span className="text-xl">📊</span> Score History
+                </h3>
+                <ScoreTable
+                  players={room.players}
+                  roundHistory={room.roundHistory}
+                  currentTotals={currentTotals ?? {}}
+                  playerId={playerId}
+                />
+              </div>
             </div>
 
             <div className="flex-shrink-0 pt-4">
@@ -491,21 +371,9 @@ export function GamePage() {
         )}
 
         {/* Phase: finished */}
-        {phase === "finished" && winnerId && (() => {
-          const finishedRows = toRows(roundHistory.length > 0 ? roundHistory : room.roundHistory);
-          const finishedRoundNumbers = [...new Set(finishedRows.map((r) => r.n))].sort((a, b) => a - b);
-          const finishedTotals: Record<string, number> = {};
-          room.players.forEach((p) => {
-            finishedTotals[p.id] = currentTotals?.[p.id] ?? finishedRows.reduce((s, r) => s + (r.scores[p.id] ?? 0), 0);
-          });
-          const sortedFinished = [...room.players].map((p) => ({ ...p, total: finishedTotals[p.id] ?? 0 })).sort((a, b) => b.total - a.total);
-          const fScore = (pid: string, n: number) => finishedRows.find((r) => r.n === n)?.scores[pid] ?? 0;
-          const fRole = (pid: string, n: number) => finishedRows.find((r) => r.n === n)?.roles[pid];
-
-          return (
+        {phase === "finished" && winnerId && (
           <div className="space-y-8" style={{ maxHeight: "calc(100vh - 10rem)" }}>
             <div className="overflow-y-auto space-y-8 pr-1">
-              {/* Hero winner section */}
               <motion.div
                 initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -539,7 +407,6 @@ export function GamePage() {
                 <p className="text-2xl font-bold text-gold">{winnerName}</p>
               </motion.div>
 
-              {/* Final Standings — ranking cards */}
               <div className="text-left">
                 <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
                   <span className="text-xl">🏅</span> Final Standings
@@ -552,64 +419,18 @@ export function GamePage() {
                 />
               </div>
 
-              {/* Match History — score table */}
               <div className="text-left">
                 <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
                   <span className="text-xl">📊</span> Match History
                 </h3>
-                <div className="rounded-xl border border-white/[0.06] overflow-hidden shadow-lg bg-[#12122a]/50">
-                  <div className="overflow-y-auto" style={{ maxHeight: "45vh" }}>
-                    <table className="w-full text-sm table-fixed border-collapse">
-                      <thead>
-                        <tr className="bg-[#1a1a3e]/95">
-                          <th className="sticky top-0 z-20 w-20 py-3 pl-4 pr-2 text-left text-text-muted font-semibold text-[11px] uppercase tracking-wider bg-[#1a1a3e]/95 backdrop-blur-sm">Game</th>
-                          {sortedFinished.map((p) => (
-                            <th key={p.id} className="sticky top-0 z-20 py-3 px-2 text-right text-text-muted font-semibold text-[11px] uppercase tracking-wider truncate bg-[#1a1a3e]/95 backdrop-blur-sm">
-                              <span className="inline-block max-w-full truncate align-middle">{p.name}</span>
-                              {p.id === playerId && <span className="text-text-muted text-[10px] ml-1 font-normal">(You)</span>}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {finishedRoundNumbers.map((rn, i) => (
-                          <tr key={rn} className={`${i % 2 === 0 ? "bg-white/[0.015]" : "bg-white/[0.04]"} hover:bg-white/[0.07] transition-colors duration-150`}>
-                            <td className="sticky left-0 z-10 w-20 py-2.5 pl-4 pr-2 text-text-muted text-xs font-medium whitespace-nowrap bg-inherit">Game {rn}</td>
-                            {sortedFinished.map((p) => {
-                              const score = fScore(p.id, rn);
-                              const role = fRole(p.id, rn);
-                              return (
-                                <td
-                                  key={p.id}
-                                  className="py-2.5 px-2 text-right font-mono text-sm relative cursor-default"
-                                  onMouseEnter={(e) => {
-                                    if (!role) return;
-                                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                    setHoveredCell({ rect, role, round: rn });
-                                  }}
-                                  onMouseLeave={() => setHoveredCell(null)}
-                                >
-                                  <span className={`${score > 0 ? "text-emerald-400 font-medium" : "text-white/30"} transition-colors duration-150`}>{score}</span>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-[#1a1a3e]/95 border-t border-white/[0.08] sticky bottom-0 z-20 backdrop-blur-sm">
-                          <td className="sticky left-0 z-30 w-20 py-3 pl-4 pr-2 font-bold text-gold text-xs uppercase tracking-wider bg-[#1a1a3e]/95 backdrop-blur-sm">Total</td>
-                          {sortedFinished.map((p) => (
-                            <td key={p.id} className="py-3 px-2 text-right font-bold font-mono text-sm text-gold bg-[#1a1a3e]/95 backdrop-blur-sm">{p.total}</td>
-                          ))}
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </div>
+                <ScoreTable
+                  players={room.players}
+                  roundHistory={roundHistory.length > 0 ? roundHistory : room.roundHistory}
+                  currentTotals={currentTotals ?? {}}
+                  playerId={playerId}
+                />
               </div>
 
-              {/* Player Statistics */}
               {playerStatistics && Object.keys(playerStatistics).length > 0 && (
                 <div className="text-left">
                   <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
@@ -639,7 +460,6 @@ export function GamePage() {
                 </div>
               )}
 
-              {/* Actions */}
               <div className="flex flex-wrap gap-3 justify-center pb-4">
                 <Button onClick={() => navigate("/")}>
                   Back to Home
@@ -649,28 +469,8 @@ export function GamePage() {
                 </Button>
               </div>
             </div>
-
-            {/* Fixed tooltip for finished phase (not clipped by overflow) */}
-            {hoveredCell && (
-              <div
-                className="fixed z-[100] pointer-events-none"
-                style={{
-                  left: hoveredCell.rect.left + hoveredCell.rect.width / 2,
-                  top: hoveredCell.rect.top - 10,
-                  transform: "translate(-50%, -100%)",
-                }}
-              >
-                <div className="bg-gray-900/95 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl border border-white/[0.12] backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150">
-                  <div className="text-center text-text-muted text-[10px] mb-0.5 tracking-wide">Game {hoveredCell.round}</div>
-                  <div className="flex items-center gap-1.5">
-                    <span>{ROLE_EMOJIS[hoveredCell.role]} {ROLE_LABELS[hoveredCell.role]}</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-          );
-        })()}
+        )}
 
         {phase === "waiting" && (
           <Button variant="ghost" onClick={() => navigate("/")}>
@@ -706,10 +506,36 @@ function placeLabel(i: number): string {
   return `${i + 1}th Place`;
 }
 
+function ScoreTooltip({ cell }: { cell: { rect: DOMRect; role: GameRole; round: number } }) {
+  return createPortal(
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9, y: 6 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9, y: 6 }}
+      transition={{ duration: 0.15, ease: "easeOut" }}
+      className="fixed z-[100] pointer-events-none"
+      style={{
+        left: cell.rect.left + cell.rect.width / 2,
+        top: cell.rect.top - 8,
+        transform: "translate(-50%, -100%)",
+      }}
+    >
+      <div className="bg-[#1c1c3a] text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-[0_8px_30px_rgba(0,0,0,0.5)] border border-white/[0.1]">
+        <div className="text-center text-white/40 text-[10px] mb-0.5 tracking-wide font-medium">Game {cell.round}</div>
+        <div className="flex items-center gap-1.5">
+          <span>{ROLE_EMOJIS[cell.role]} <span style={{ color: ROLE_COLORS[cell.role] }} className="font-semibold">{ROLE_LABELS[cell.role]}</span></span>
+        </div>
+      </div>
+    </motion.div>,
+    document.body
+  );
+}
+
 function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTableProps) {
   const rows = toRows(roundHistory);
   const roundNumbers = [...new Set(rows.map((r) => r.n))].sort((a, b) => a - b);
   const [hoveredCell, setHoveredCell] = useState<{ rect: DOMRect; role: GameRole; round: number } | null>(null);
+  const hoverRef = useRef<{ role: GameRole; round: number } | null>(null);
 
   const sorted = [...players]
     .map((p) => ({
@@ -733,104 +559,80 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-left">
-        <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
-          <span className="text-xl">🏆</span> Current Rankings
-        </h3>
-        <RankingCards
-          players={players}
-          roundHistory={roundHistory}
-          currentTotals={currentTotals}
-          playerId={playerId}
-        />
+    <div className="rounded-xl border border-white/[0.06] overflow-hidden bg-[#0a0a1e]/80 shadow-lg">
+      <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: "55vh" }}>
+        <table className="w-full text-sm" style={{ tableLayout: "fixed", borderCollapse: "separate", borderSpacing: 0 }}>
+          <thead>
+            <tr>
+              <th className="sticky top-0 z-10 w-[72px] py-3.5 pl-4 pr-2 text-left text-[11px] font-bold uppercase tracking-widest text-white/35 bg-[#151535] border-b border-white/[0.06]">
+                Game
+              </th>
+              {sorted.map((p, idx) => (
+                <th
+                  key={p.id}
+                  className={`sticky top-0 z-10 py-3.5 px-3 text-right text-[11px] font-bold uppercase tracking-widest text-white/35 bg-[#151535] border-b border-white/[0.06] ${idx > 0 ? "border-l border-white/[0.03]" : ""}`}
+                >
+                  <span className="truncate">{p.name}</span>
+                  {p.id === playerId && <span className="text-white/20 text-[10px] ml-1 font-normal">(You)</span>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {roundNumbers.map((rn, i) => (
+              <tr
+                key={rn}
+                className={`${i % 2 === 0 ? "bg-white/[0.015]" : "bg-white/[0.04]"} hover:bg-white/[0.08] transition-colors duration-150`}
+              >
+                <td className="sticky left-0 z-[2] w-[72px] py-2.5 pl-4 pr-2 text-xs font-medium text-white/35 whitespace-nowrap bg-inherit border-b border-white/[0.03]">
+                  Game {rn}
+                </td>
+                {sorted.map((p, idx) => {
+                  const score = getScore(p.id, rn);
+                  const role = getRole(p.id, rn);
+                  return (
+                    <td
+                      key={p.id}
+                      className={`py-2.5 px-3 text-right font-mono text-sm border-b border-white/[0.03] cursor-default ${idx > 0 ? "border-l border-white/[0.03]" : ""}`}
+                      onPointerEnter={(e) => {
+                        if (!role) return;
+                        hoverRef.current = { role, round: rn };
+                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        setHoveredCell({ rect, role, round: rn });
+                      }}
+                      onPointerLeave={() => {
+                        hoverRef.current = null;
+                        setHoveredCell(null);
+                      }}
+                    >
+                      <span className={`${score > 0 ? "text-emerald-400 font-semibold" : "text-white/15"} select-none`}>{score}</span>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="sticky bottom-0 z-10 bg-[#151535] border-t border-white/[0.08]">
+              <td className="py-3.5 pl-4 pr-2 text-[11px] font-bold uppercase tracking-widest text-gold/90">
+                Total
+              </td>
+              {sorted.map((p, idx) => (
+                <td
+                  key={p.id}
+                  className={`py-3.5 px-3 text-right font-bold font-mono text-sm text-gold ${idx > 0 ? "border-l border-white/[0.03]" : ""}`}
+                >
+                  {p.total}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
       </div>
 
-      <div className="text-left">
-        <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
-          <span className="text-xl">📊</span> Score History
-        </h3>
-        <div className="rounded-xl border border-white/[0.06] overflow-hidden shadow-lg bg-[#12122a]/50">
-          <div className="overflow-y-auto" style={{ maxHeight: "55vh" }}>
-            <table className="w-full text-sm table-fixed border-collapse">
-              <thead>
-                <tr className="bg-[#1a1a3e]/95">
-                  <th className="sticky top-0 z-20 w-20 py-3 pl-4 pr-2 text-left text-text-muted font-semibold text-[11px] uppercase tracking-wider bg-[#1a1a3e]/95 backdrop-blur-sm">
-                    Game
-                  </th>
-                  {sorted.map((p) => (
-                    <th key={p.id} className="sticky top-0 z-20 py-3 px-2 text-right text-text-muted font-semibold text-[11px] uppercase tracking-wider truncate bg-[#1a1a3e]/95 backdrop-blur-sm">
-                      <span className="inline-block max-w-full truncate align-middle">{p.name}</span>
-                      {p.id === playerId && <span className="text-text-muted text-[10px] ml-1 font-normal">(You)</span>}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {roundNumbers.map((rn, i) => (
-                  <tr
-                    key={rn}
-                    className={`${i % 2 === 0 ? "bg-white/[0.015]" : "bg-white/[0.04]"} hover:bg-white/[0.07] transition-colors duration-150`}
-                  >
-                    <td className="sticky left-0 z-10 w-20 py-2.5 pl-4 pr-2 text-text-muted text-xs font-medium whitespace-nowrap bg-inherit">
-                      Game {rn}
-                    </td>
-                    {sorted.map((p) => {
-                      const score = getScore(p.id, rn);
-                      const role = getRole(p.id, rn);
-                      return (
-                        <td
-                          key={p.id}
-                          className="py-2.5 px-2 text-right font-mono text-sm relative cursor-default"
-                          onMouseEnter={(e) => {
-                            if (!role) return;
-                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                            setHoveredCell({ rect, role, round: rn });
-                          }}
-                          onMouseLeave={() => setHoveredCell(null)}
-                        >
-                          <span className={`${score > 0 ? "text-emerald-400 font-medium" : "text-white/30"} transition-colors duration-150`}>{score}</span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-[#1a1a3e]/95 border-t border-white/[0.08] sticky bottom-0 z-20 backdrop-blur-sm">
-                  <td className="sticky left-0 z-30 w-20 py-3 pl-4 pr-2 font-bold text-gold text-xs uppercase tracking-wider bg-[#1a1a3e]/95 backdrop-blur-sm">
-                    Total
-                  </td>
-                  {sorted.map((p) => (
-                    <td key={p.id} className="py-3 px-2 text-right font-bold font-mono text-sm text-gold bg-[#1a1a3e]/95 backdrop-blur-sm">
-                      {p.total}
-                    </td>
-                  ))}
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Fixed tooltip (not clipped by overflow) */}
-      {hoveredCell && (
-        <div
-          className="fixed z-[100] pointer-events-none"
-          style={{
-            left: hoveredCell.rect.left + hoveredCell.rect.width / 2,
-            top: hoveredCell.rect.top - 10,
-            transform: "translate(-50%, -100%)",
-          }}
-        >
-          <div className="bg-gray-900/95 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl border border-white/[0.12] backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150">
-            <div className="text-center text-text-muted text-[10px] mb-0.5 tracking-wide">Game {hoveredCell.round}</div>
-            <div className="flex items-center gap-1.5">
-              <span>{ROLE_EMOJIS[hoveredCell.role]} {ROLE_LABELS[hoveredCell.role]}</span>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {hoveredCell && <ScoreTooltip key="tooltip" cell={hoveredCell} />}
+      </AnimatePresence>
     </div>
   );
 }
