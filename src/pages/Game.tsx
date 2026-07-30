@@ -11,6 +11,7 @@ import { ShuffleAnimation } from "../components/game/ShuffleAnimation";
 import { ROLE_EMOJIS, ROLE_LABELS, ROLE_COLORS } from "../constants/game";
 import { usePersistence } from "../hooks/usePersistence";
 import { loadSession, clearSession } from "../utils/session";
+import type { GameRole } from "../types";
 
 export function GamePage() {
   const navigate = useNavigate();
@@ -648,6 +649,7 @@ export function GamePage() {
                 </Button>
               </div>
             </div>
+
           </div>
           );
         })()}
@@ -672,7 +674,7 @@ interface ScoreTableProps {
   players: { id: string; name: string; avatarColor: string }[];
   roundHistory: { roundNumber?: number; round?: number; scores: Record<string, number>; roles: Record<string, GameRole> }[];
   currentTotals: Record<string, number>;
-  playerId: string;
+  playerId: string | null;
 }
 
 function toRows(rh: ScoreTableProps["roundHistory"]): RoundRow[] {
