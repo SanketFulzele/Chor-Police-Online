@@ -4,6 +4,6 @@ export type {
   Player,
   PlayerStatistics,
   Room,
-} from "../../shared/socket/types";
+} from "../shared/socket/types.js";
 
-export type { SocketEvent } from "../../shared/socket/events";
+export type { SocketEvent } from "../shared/socket/events.js";

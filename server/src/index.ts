@@ -14,7 +14,7 @@ import {
   updatePlayerSocket,
 } from "./roomManager.js";
 import { registerGameHandlers } from "./gameHandler.js";
-import { SocketEvents } from "../../shared/socket/events";
+import { SocketEvents } from "../shared/socket/events.js";
 
 const app = express();
 const httpServer = createServer(app);

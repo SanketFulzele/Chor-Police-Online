@@ -1,0 +1,47 @@
+import type { ScoreInput, ScoreOutput } from "./types";
+
+const RAJA_POINTS = 1000;
+const MANTRI_CORRECT_POINTS = 500;
+const MANTRI_WRONG_POINTS = 0;
+const DAKU_POINTS = 300;
+const CHOR_CORRECT_POINTS = 0;
+const CHOR_WRONG_POINTS = 500;
+
+export function calculateScores(input: ScoreInput): ScoreOutput {
+  const { chosenId, roles } = input;
+  const chosenRole = roles[chosenId];
+
+  const isCorrect = chosenRole === "chor";
+
+  const scores: Record<string, number> = {};
+
+  for (const [playerId, role] of Object.entries(roles)) {
+    switch (role) {
+      case "raja":
+        scores[playerId] = RAJA_POINTS;
+        break;
+      case "mantri":
+        scores[playerId] = isCorrect ? MANTRI_CORRECT_POINTS : MANTRI_WRONG_POINTS;
+        break;
+      case "chor":
+        scores[playerId] = isCorrect ? CHOR_CORRECT_POINTS : CHOR_WRONG_POINTS;
+        break;
+      case "daku":
+        scores[playerId] = DAKU_POINTS;
+        break;
+    }
+  }
+
+  return { scores, isCorrect };
+}
+
+export function accumulateScores(
+  previousScores: Record<string, number>,
+  roundScores: Record<string, number>
+): Record<string, number> {
+  const result: Record<string, number> = { ...previousScores };
+  for (const [playerId, score] of Object.entries(roundScores)) {
+    result[playerId] = (result[playerId] ?? 0) + score;
+  }
+  return result;
+}

@@ -1,11 +1,11 @@
 import type { Server } from "socket.io";
 import type { Room } from "./types";
 import { getRoom, getPlayerBySocketId } from "./roomManager.js";
-import { SocketEvents } from "../../shared/socket/events";
+import { SocketEvents } from "../shared/socket/events.js";
 import type {
   EngineResult,
   ScheduledEvent,
-} from "../../src/game/gameEngine";
+} from "../game/gameEngine";
 import {
   startGame,
   revealCard,
@@ -15,7 +15,7 @@ import {
   nextRound,
   advanceToPhase,
   endGame,
-} from "../../src/game/gameEngine";
+} from "../game/gameEngine.js";
 
 // ---- Emit helper ----
 
