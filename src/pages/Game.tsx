@@ -127,36 +127,32 @@ export function GamePage() {
 
         {/* Persistent player list during gameplay */}
         {isGameplayPhase && (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {room.players.map((p) => {
               const isPublicRaja = p.publicRole === "raja";
               const isPublicMantri = p.publicRole === "mantri";
               return (
                 <div
                   key={p.id}
-                  className="glass rounded-xl px-4 py-3 flex items-center gap-3"
+                  className="glass rounded-lg px-3 py-2 flex items-center gap-2.5"
                 >
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                     style={{ backgroundColor: p.avatarColor }}
                   >
                     {p.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="font-medium truncate">
+                    <p className="text-sm font-medium truncate">
                       {p.name} {p.id === playerId && <span className="text-text-muted text-xs">(You)</span>}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 text-xs">
                     {isPublicRaja && (
-                      <span className="text-sm font-bold text-gold flex items-center gap-1">
-                        👑 Raja
-                      </span>
+                      <span className="font-bold text-gold">👑 Raja</span>
                     )}
                     {isPublicMantri && (
-                      <span className="text-sm font-bold text-purple-400 flex items-center gap-1">
-                        📜 Mantri
-                      </span>
+                      <span className="font-bold text-purple-400">📜 Mantri</span>
                     )}
                   </div>
                 </div>
@@ -195,35 +191,31 @@ export function GamePage() {
           </Card>
         )}
 
-        {/* Phase: card-distribution / card-reveal */}
-        {(phase === "card-distribution" || phase === "card-reveal") && (
-          <div className="space-y-6">
-            {phase === "card-reveal" && (
-              <>
-                <GameCard
-                  role={myRole ?? undefined}
-                  revealed={hasRevealed && !hasHidden}
-                  onReveal={revealCard}
-                  onHide={hideCard}
-                />
+        {/* Persistent role card - always available during gameplay */}
+        {myRole && phase && !["waiting", "shuffling", "card-distribution", "finished", null].includes(phase) && (
+          <Card>
+            <GameCard
+              role={myRole}
+              revealed={hasRevealed && !hasHidden}
+              onReveal={revealCard}
+              onHide={hideCard}
+            />
 
-                {myRole === "raja" && hasRevealed && !hasHidden && !rajaRevealed && (
-                  <p className="text-sm text-yellow-400">
-                    Raja revealed! Other players can now see who you are.
-                  </p>
-                )}
-
-                {myRole === "raja" && rajaRevealed && (
-                  <Button
-                    className="gold-gradient text-black font-bold"
-                    onClick={askForMantri}
-                  >
-                    Ask: Who is my Mantri?
-                  </Button>
-                )}
-              </>
+            {myRole === "raja" && hasRevealed && !hasHidden && !rajaRevealed && (
+              <p className="text-sm text-yellow-400 mt-2">
+                Raja revealed! Other players can now see who you are.
+              </p>
             )}
-          </div>
+
+            {myRole === "raja" && rajaRevealed && (
+              <Button
+                className="gold-gradient text-black font-bold mt-3"
+                onClick={askForMantri}
+              >
+                Ask: Who is my Mantri?
+              </Button>
+            )}
+          </Card>
         )}
 
         {/* Phase: mantri-reveal */}
@@ -580,6 +572,12 @@ function toRows(rh: ScoreTableProps["roundHistory"]): RoundRow[] {
   return rh.map((r) => ({ n: r.roundNumber ?? r.round ?? 0, scores: r.scores, roles: r.roles }));
 }
 
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTableProps) {
   const rows = toRows(roundHistory);
   const roundNumbers = [...new Set(rows.map((r) => r.n))].sort((a, b) => a - b);
@@ -605,69 +603,82 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
     return <p className="text-text-muted text-sm">No rounds completed yet.</p>;
   }
 
+  const medal = (i: number) =>
+    i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
+
   return (
-    <div className="overflow-x-auto -mx-4 px-4">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-white/10">
-            <th className="py-2 pr-2 text-left text-text-muted font-medium w-8">#</th>
-            <th className="py-2 pr-3 text-left text-text-muted font-medium whitespace-nowrap">Player</th>
-            {roundNumbers.map((rn) => (
-              <th key={rn} className="py-2 px-2 text-right text-text-muted font-medium whitespace-nowrap min-w-[64px]">
-                R{rn}
+    <div className="space-y-4">
+      {/* Compact ranking bar */}
+      <div className="flex flex-wrap gap-x-5 gap-y-1 justify-center text-sm">
+        {sorted.map((p, i) => {
+          const m = medal(i);
+          return (
+            <span key={p.id} className="flex items-center gap-1.5 whitespace-nowrap">
+              {m ? <span>{m}</span> : <span className="text-xs text-text-muted">{ordinal(i + 1)}</span>}
+              <span className={p.id === playerId ? "font-semibold" : ""}>{p.name}</span>
+              <span className="font-mono text-gold font-bold">{p.total}</span>
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Transposed table: rows = games, columns = players */}
+      <div className="overflow-x-auto -mx-4 px-4">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b border-white/10">
+              <th className="sticky left-0 z-10 py-2 pr-3 text-left text-text-muted font-medium min-w-[72px] bg-[#16162a]">
+                Game
               </th>
-            ))}
-            <th className="py-2 pl-3 text-right text-text-muted font-medium whitespace-nowrap min-w-[64px]">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((p, i) => (
-            <tr key={p.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-              <td className="py-2.5 pr-2 text-center text-lg">
-                {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
-              </td>
-              <td className="py-2.5 pr-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                    style={{ backgroundColor: p.avatarColor }}
-                  >
-                    {p.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="font-medium truncate max-w-[80px] sm:max-w-[120px]">
-                    {p.name}
-                    {p.id === playerId && <span className="text-text-muted text-xs ml-1">(You)</span>}
-                  </span>
-                </div>
-              </td>
-              {roundNumbers.map((rn) => {
-                const score = getScore(p.id, rn);
-                const role = getRole(p.id, rn);
-                return (
-                  <td key={rn} className="py-2.5 px-2 text-right font-mono text-sm relative group">
-                    <span className={score > 0 ? "text-emerald" : "text-text-muted"}>
-                      {score}
-                    </span>
-                    {role && (
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-10">
-                        <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg border border-white/10">
-                          <div className="flex items-center gap-1.5">
-                            <span>{ROLE_EMOJIS[role]}</span>
-                            <span>{ROLE_LABELS[role]}</span>
+              {sorted.map((p) => (
+                <th key={p.id} className="py-2 px-2.5 text-right text-text-muted font-medium whitespace-nowrap min-w-[88px]">
+                  <span className="text-xs">{p.name}</span>
+                  {p.id === playerId && <span className="text-text-muted text-[10px] ml-0.5">(You)</span>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {roundNumbers.map((rn, i) => (
+              <tr key={rn} className={i % 2 === 1 ? "bg-white/[0.03]" : ""}>
+                <td className="sticky left-0 z-10 py-1.5 pr-3 text-text-muted font-medium whitespace-nowrap bg-[#16162a]">
+                  <span className="text-xs">Game {rn}</span>
+                </td>
+                {sorted.map((p) => {
+                  const score = getScore(p.id, rn);
+                  const role = getRole(p.id, rn);
+                  return (
+                    <td key={p.id} className="py-1.5 px-2.5 text-right font-mono text-xs relative group">
+                      <span className={score > 0 ? "text-emerald" : "text-text-muted"}>{score}</span>
+                      {role && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-20">
+                          <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg border border-white/10">
+                            <div className="text-center text-text-muted text-[10px] mb-0.5">Game {rn}</div>
+                            <div className="flex items-center gap-1.5">
+                              <span>{ROLE_EMOJIS[role]} {ROLE_LABELS[role]}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </td>
-                );
-              })}
-              <td className="py-2.5 pl-3 text-right font-bold font-mono text-gold">
-                {p.total}
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+            {/* Total row */}
+            <tr className="border-t border-white/10 bg-white/[0.06]">
+              <td className="sticky left-0 z-10 py-2 pr-3 font-bold text-gold whitespace-nowrap bg-[#16162a]">
+                TOTAL
               </td>
+              {sorted.map((p) => (
+                <td key={p.id} className="py-2 px-2.5 text-right font-bold font-mono text-sm text-gold">
+                  {p.total}
+                </td>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
