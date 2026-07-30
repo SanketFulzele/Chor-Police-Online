@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import type { GameRole, GamePhase, PlayerStatistics } from "../types";
-import type { RoundHistoryEntry } from "../../shared/socket/types";
+import type { GameRole, GamePhase } from "../types";
 
 export interface LeaderboardEntry {
   playerId: string;
@@ -8,83 +7,150 @@ export interface LeaderboardEntry {
   score: number;
 }
 
+export interface RoundResultData {
+  roundNumber: number;
+  isCorrect: boolean;
+  scores: Record<string, number>;
+  roles: Record<string, GameRole>;
+  mantriId: string;
+  chosenId: string;
+}
+
+export interface RoundHistoryItem {
+  roundNumber: number;
+  roles: Record<string, GameRole>;
+  mantriId: string;
+  chosenId: string;
+  isCorrect: boolean;
+  scores: Record<string, number>;
+}
+
 interface GameState {
   myRole: GameRole | null;
   phase: GamePhase | null;
-  rajaId: string | null;
+  round: number;
+  hasRevealed: boolean;
+  hasHidden: boolean;
+  revealedPlayers: string[];
+  hiddenPlayers: string[];
+  isShuffling: boolean;
   mantriId: string | null;
-  chosenId: string | null;
-  chorId: string | null;
-  isCorrect: boolean | null;
+  revealedRoles: Record<string, GameRole> | null;
+  lastRoundResult: RoundResultData | null;
+  currentScores: Record<string, number> | null;
+  currentTotals: Record<string, number> | null;
   leaderboard: LeaderboardEntry[];
   winnerId: string | null;
   winnerName: string | null;
-  winnerLabel: string | null;
-  playerStatistics: Record<string, PlayerStatistics> | null;
-  roundHistory: RoundHistoryEntry[];
+  playerStatistics: Record<string, unknown> | null;
+  roundHistory: RoundHistoryItem[];
 
   setMyRole: (role: GameRole) => void;
   setPhase: (phase: GamePhase) => void;
-  setPhaseData: (data: {
-    phase: GamePhase;
-    rajaId?: string | null;
-    mantriId?: string | null;
-    chosenId?: string | null;
-    chorId?: string | null;
-    isCorrect?: boolean | null;
-  }) => void;
+  setRound: (round: number) => void;
+  setHasRevealed: (v: boolean) => void;
+  setHasHidden: (v: boolean) => void;
+  addRevealedPlayer: (playerId: string) => void;
+  addHiddenPlayer: (playerId: string) => void;
+  setShuffling: (v: boolean) => void;
+  setMantriId: (id: string | null) => void;
+  setRevealedRoles: (roles: Record<string, GameRole> | null) => void;
+  setLastRoundResult: (result: RoundResultData | null) => void;
+  setCurrentScores: (s: Record<string, number> | null) => void;
+  setCurrentTotals: (t: Record<string, number> | null) => void;
   setLeaderboard: (lb: LeaderboardEntry[]) => void;
-  setGameOver: (data: {
-    winnerId: string;
-    winnerName: string;
-    winnerLabel: string;
-    leaderboard: LeaderboardEntry[];
-    playerStatistics: Record<string, PlayerStatistics>;
-    roundHistory: RoundHistoryEntry[];
-  }) => void;
+  setGameOver: (data: { winnerId: string; winnerName: string; leaderboard: LeaderboardEntry[]; playerStatistics: Record<string, unknown>; roundHistory: RoundHistoryItem[] }) => void;
+  resetRound: () => void;
   reset: () => void;
 }
 
-const initialState = {
-  myRole: null as GameRole | null,
-  phase: null as GamePhase | null,
-  rajaId: null as string | null,
-  mantriId: null as string | null,
-  chosenId: null as string | null,
-  chorId: null as string | null,
-  isCorrect: null as boolean | null,
-  leaderboard: [] as LeaderboardEntry[],
-  winnerId: null as string | null,
-  winnerName: null as string | null,
-  winnerLabel: null as string | null,
-  playerStatistics: null as Record<string, PlayerStatistics> | null,
-  roundHistory: [] as RoundHistoryEntry[],
-};
-
 export const useGameStore = create<GameState>((set) => ({
-  ...initialState,
+  myRole: null,
+  phase: null,
+  round: 0,
+  hasRevealed: false,
+  hasHidden: false,
+  revealedPlayers: [],
+  hiddenPlayers: [],
+  isShuffling: false,
+  mantriId: null,
+  revealedRoles: null,
+  lastRoundResult: null,
+  currentScores: null,
+  currentTotals: null,
+  leaderboard: [],
+  winnerId: null,
+  winnerName: null,
+  playerStatistics: null,
+  roundHistory: [],
 
   setMyRole: (role) => set({ myRole: role }),
   setPhase: (phase) => set({ phase }),
-  setPhaseData: (data) =>
-    set({
-      phase: data.phase,
-      rajaId: data.rajaId ?? null,
-      mantriId: data.mantriId ?? null,
-      chosenId: data.chosenId ?? null,
-      chorId: data.chorId ?? null,
-      isCorrect: data.isCorrect ?? null,
-    }),
+  setRound: (round) => set({ round }),
+  setHasRevealed: (v) => set({ hasRevealed: v }),
+  setHasHidden: (v) => set({ hasHidden: v }),
+  addRevealedPlayer: (playerId) =>
+    set((state) => ({
+      revealedPlayers: state.revealedPlayers.includes(playerId)
+        ? state.revealedPlayers
+        : [...state.revealedPlayers, playerId],
+    })),
+  addHiddenPlayer: (playerId) =>
+    set((state) => ({
+      hiddenPlayers: state.hiddenPlayers.includes(playerId)
+        ? state.hiddenPlayers
+        : [...state.hiddenPlayers, playerId],
+    })),
+  setShuffling: (v) => set({ isShuffling: v }),
+  setMantriId: (id) => set({ mantriId: id }),
+  setRevealedRoles: (roles) => set({ revealedRoles: roles }),
+  setLastRoundResult: (result) => set({ lastRoundResult: result }),
+  setCurrentScores: (s) => set({ currentScores: s }),
+  setCurrentTotals: (t) => set({ currentTotals: t }),
   setLeaderboard: (lb) => set({ leaderboard: lb }),
   setGameOver: (data) =>
     set({
       winnerId: data.winnerId,
       winnerName: data.winnerName,
-      winnerLabel: data.winnerLabel,
       leaderboard: data.leaderboard,
       playerStatistics: data.playerStatistics,
       roundHistory: data.roundHistory,
       phase: "finished",
     }),
-  reset: () => set({ ...initialState }),
+
+  resetRound: () =>
+    set({
+      hasRevealed: false,
+      hasHidden: false,
+      revealedPlayers: [],
+      hiddenPlayers: [],
+      isShuffling: false,
+      mantriId: null,
+      revealedRoles: null,
+      lastRoundResult: null,
+      currentScores: null,
+      currentTotals: null,
+      leaderboard: [],
+    }),
+  reset: () =>
+    set({
+      myRole: null,
+      phase: null,
+      round: 0,
+      hasRevealed: false,
+      hasHidden: false,
+      revealedPlayers: [],
+      hiddenPlayers: [],
+      isShuffling: false,
+      mantriId: null,
+      revealedRoles: null,
+      lastRoundResult: null,
+      currentScores: null,
+      currentTotals: null,
+      leaderboard: [],
+      winnerId: null,
+      winnerName: null,
+      playerStatistics: null,
+      roundHistory: [],
+    }),
 }));

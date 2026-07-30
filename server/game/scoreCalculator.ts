@@ -1,29 +1,34 @@
 import type { ScoreInput, ScoreOutput } from "./types";
 
-const CORRECT_POINTS = 500;
-const CHOR_CAUGHT_POINTS = 0;
-const CHOR_ESCAPED_POINTS = 500;
+const RAJA_POINTS = 1000;
+const MANTRI_CORRECT_POINTS = 500;
+const MANTRI_WRONG_POINTS = 0;
+const DAKU_POINTS = 300;
+const CHOR_CORRECT_POINTS = 0;
+const CHOR_WRONG_POINTS = 500;
 
 export function calculateScores(input: ScoreInput): ScoreOutput {
   const { chosenId, roles } = input;
   const chosenRole = roles[chosenId];
+
   const isCorrect = chosenRole === "chor";
 
   const scores: Record<string, number> = {};
 
   for (const [playerId, role] of Object.entries(roles)) {
-    if (isCorrect) {
-      if (role === "chor") {
-        scores[playerId] = CHOR_CAUGHT_POINTS;
-      } else {
-        scores[playerId] = CORRECT_POINTS;
-      }
-    } else {
-      if (role === "chor") {
-        scores[playerId] = CHOR_ESCAPED_POINTS;
-      } else {
-        scores[playerId] = 0;
-      }
+    switch (role) {
+      case "raja":
+        scores[playerId] = RAJA_POINTS;
+        break;
+      case "mantri":
+        scores[playerId] = isCorrect ? MANTRI_CORRECT_POINTS : MANTRI_WRONG_POINTS;
+        break;
+      case "chor":
+        scores[playerId] = isCorrect ? CHOR_CORRECT_POINTS : CHOR_WRONG_POINTS;
+        break;
+      case "daku":
+        scores[playerId] = DAKU_POINTS;
+        break;
     }
   }
 
