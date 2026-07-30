@@ -10,7 +10,7 @@ export function Home() {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 relative">
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -49,6 +49,14 @@ export function Home() {
           >
             Join Room
           </Button>
+          <Button
+            variant="ghost"
+            size="md"
+            fullWidth
+            onClick={() => setShowHowToPlay(true)}
+          >
+            📖 How to Play
+          </Button>
         </Card>
 
         <Card className="text-center">
@@ -57,19 +65,6 @@ export function Home() {
           </p>
         </Card>
       </motion.div>
-
-      <motion.button
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.6, duration: 0.4 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setShowHowToPlay(true)}
-        className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12] text-text-muted hover:text-text-primary text-sm font-medium transition-all duration-200 shadow-lg backdrop-blur-sm"
-      >
-        <span className="text-base">📖</span>
-        <span className="hidden sm:inline">How to Play</span>
-      </motion.button>
 
       <HowToPlayModal open={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
     </div>
