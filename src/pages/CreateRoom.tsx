@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { useState } from "react";
+import { SocketEvents } from "../../shared/socket/events";
 
 interface CreateRoomForm {
   name: string;
@@ -36,16 +37,16 @@ export function CreateRoom() {
     setLoading(true);
     setError("");
 
-    socket.emit("create-room", { playerName: data.name });
+    socket.emit(SocketEvents.CREATE_ROOM, { playerName: data.name });
 
-    socket.once("room-created", ({ roomCode, playerId, room }) => {
+    socket.once(SocketEvents.ROOM_CREATED, ({ roomCode, playerId, room }) => {
       setPlayerId(playerId);
       setRoom(room);
       setLoading(false);
       navigate(`/room?code=${roomCode}`);
     });
 
-    socket.once("error-message", ({ message }) => {
+    socket.once(SocketEvents.ERROR_MESSAGE, ({ message }) => {
       setError(message);
       setLoading(false);
     });

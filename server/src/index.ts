@@ -11,8 +11,10 @@ import {
   getPlayerBySocketId,
   togglePlayerReady,
   setPlayerDisconnected,
-  canStartGame,
+  updatePlayerSocket,
 } from "./roomManager.js";
+import { registerGameHandlers } from "./gameHandler.js";
+import { SocketEvents } from "../../shared/socket/events";
 
 const app = express();
 const httpServer = createServer(app);
@@ -33,15 +35,15 @@ app.get("/health", (_req, res) => {
 function broadcastRoom(roomCode: string) {
   const room = getRoom(roomCode);
   if (!room) return;
-  io.to(roomCode).emit("room-updated", { room });
+  io.to(roomCode).emit(SocketEvents.ROOM_UPDATED, { room });
 }
 
 io.on("connection", (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
-  socket.on("create-room", ({ playerName }: { playerName: string }) => {
+  socket.on(SocketEvents.CREATE_ROOM, ({ playerName }: { playerName: string }) => {
     if (!playerName || playerName.trim().length < 2) {
-      socket.emit("error-message", { message: "Name must be at least 2 characters" });
+      socket.emit(SocketEvents.ERROR_MESSAGE, { message: "Name must be at least 2 characters" });
       return;
     }
 
@@ -49,12 +51,12 @@ io.on("connection", (socket) => {
     const room = createRoom(socket.id, playerName.trim(), playerId);
 
     socket.join(room.code);
-    socket.emit("room-created", { roomCode: room.code, playerId, room });
+    socket.emit(SocketEvents.ROOM_CREATED, { roomCode: room.code, playerId, room });
     broadcastRoom(room.code);
   });
 
   socket.on(
-    "join-room",
+    SocketEvents.JOIN_ROOM,
     ({
       roomCode,
       playerName,
@@ -63,11 +65,11 @@ io.on("connection", (socket) => {
       playerName: string;
     }) => {
       if (!playerName || playerName.trim().length < 2) {
-        socket.emit("error-message", { message: "Name must be at least 2 characters", code: "INVALID_NAME" });
+        socket.emit(SocketEvents.ERROR_MESSAGE, { message: "Name must be at least 2 characters", code: "INVALID_NAME" });
         return;
       }
       if (!roomCode || roomCode.trim().length < 4) {
-        socket.emit("error-message", { message: "Invalid room code", code: "INVALID_CODE" });
+        socket.emit(SocketEvents.ERROR_MESSAGE, { message: "Invalid room code", code: "INVALID_CODE" });
         return;
       }
 
@@ -75,17 +77,17 @@ io.on("connection", (socket) => {
       const result = joinRoom(roomCode.trim().toUpperCase(), socket.id, playerName.trim(), playerId);
 
       if (result.error) {
-        socket.emit("error-message", { message: result.error, code: "JOIN_FAILED" });
+        socket.emit(SocketEvents.ERROR_MESSAGE, { message: result.error, code: "JOIN_FAILED" });
         return;
       }
 
       socket.join(result.room.code);
-      socket.emit("room-joined", { room: result.room, playerId });
+      socket.emit(SocketEvents.ROOM_JOINED, { room: result.room, playerId });
       broadcastRoom(result.room.code);
     }
   );
 
-  socket.on("leave-room", () => {
+  socket.on(SocketEvents.LEAVE_ROOM, () => {
     const ctx = getPlayerBySocketId(socket.id);
     if (!ctx) return;
 
@@ -97,11 +99,31 @@ io.on("connection", (socket) => {
     if (updatedRoom) {
       broadcastRoom(room.code);
     } else {
-      io.to(room.code).emit("room-destroyed");
+      io.to(room.code).emit(SocketEvents.ROOM_DESTROYED);
     }
   });
 
-  socket.on("player-ready", () => {
+  socket.on(SocketEvents.RECONNECT, ({ roomCode, playerId }: { roomCode: string; playerId: string }) => {
+    const room = getRoom(roomCode?.toUpperCase());
+    if (!room) {
+      socket.emit(SocketEvents.ERROR_MESSAGE, { message: "Room not found", code: "ROOM_NOT_FOUND" });
+      return;
+    }
+
+    const player = room.players.find((p) => p.id === playerId);
+    if (!player) {
+      socket.emit(SocketEvents.ERROR_MESSAGE, { message: "Player not found in room", code: "PLAYER_NOT_FOUND" });
+      return;
+    }
+
+    updatePlayerSocket(room.code, player.id, socket.id);
+    socket.join(room.code);
+    socket.emit(SocketEvents.RECONNECT_STATE, { room, playerId, myRole: player.currentRole });
+    io.to(room.code).emit(SocketEvents.PLAYER_RECONNECTED, { playerId: player.id });
+    io.to(room.code).emit(SocketEvents.ROOM_UPDATED, { room });
+  });
+
+  socket.on(SocketEvents.PLAYER_READY, () => {
     const ctx = getPlayerBySocketId(socket.id);
     if (!ctx) return;
 
@@ -112,7 +134,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("player-unready", () => {
+  socket.on(SocketEvents.PLAYER_UNREADY, () => {
     const ctx = getPlayerBySocketId(socket.id);
     if (!ctx) return;
 
@@ -124,27 +146,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("start-game", () => {
-    const ctx = getPlayerBySocketId(socket.id);
-    if (!ctx) return;
-
-    const { room, player } = ctx;
-    if (!player.isHost) {
-      socket.emit("error-message", { message: "Only the host can start the game" });
-      return;
-    }
-    if (!canStartGame(room)) {
-      socket.emit("error-message", { message: "Need 4 players, all ready" });
-      return;
-    }
-
-    room.phase = "shuffling";
-    room.round = 1;
-    broadcastRoom(room.code);
-
-    io.to(room.code).emit("game-starting", { room });
-  });
-
   socket.on("disconnecting", () => {
     const ctx = getPlayerBySocketId(socket.id);
     if (!ctx) return;
@@ -153,8 +154,9 @@ io.on("connection", (socket) => {
     const updatedRoom = setPlayerDisconnected(room.code, player.id);
 
     if (updatedRoom) {
+      io.to(room.code).emit(SocketEvents.PLAYER_DISCONNECTED, { playerId: player.id });
       if (player.isHost) {
-        io.to(room.code).emit("host-changed", { newHostId: updatedRoom.hostId });
+        io.to(room.code).emit(SocketEvents.HOST_CHANGED, { newHostId: updatedRoom.hostId });
       }
       broadcastRoom(room.code);
     }
@@ -164,6 +166,8 @@ io.on("connection", (socket) => {
     console.log(`Player disconnected: ${socket.id}`);
   });
 });
+
+registerGameHandlers(io);
 
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {

@@ -1,12 +1,5 @@
-import type { RoundResult } from "./types";
-import type { GameRole } from "../types";
-
-/**
- * Per-player statistics accumulated across games.
- *
- * These are computed from round history and stored
- * in LocalStorage for persistence.
- */
+import type { GameRole } from "../../shared/socket/types";
+import type { RoundHistoryEntry } from "../../shared/socket/types";
 
 export interface PlayerStats {
   gamesPlayed: number;
@@ -21,36 +14,61 @@ export interface PlayerStats {
   wrongGuesses: number;
 }
 
-/**
- * Calculates a single player's stats from round history.
- */
 export function calculatePlayerStats(
-  _playerId: string,
-  _roundHistory: RoundResult[],
-  _allWinners: string[]
+  playerId: string,
+  rounds: RoundHistoryEntry[],
+  allWinners: string[]
 ): PlayerStats {
-  // TODO: Implement in Batch 5
+  let totalScore = 0;
+  let highestScore = 0;
+  let timesRaja = 0;
+  let timesMantri = 0;
+  let timesChor = 0;
+  let timesDaku = 0;
+  let correctGuesses = 0;
+  let wrongGuesses = 0;
+
+  for (const round of rounds) {
+    const score = round.scores[playerId] ?? 0;
+    totalScore += score;
+    if (score > highestScore) highestScore = score;
+
+    const role = round.roles[playerId];
+    if (role === "raja") timesRaja++;
+    else if (role === "mantri") timesMantri++;
+    else if (role === "chor") timesChor++;
+    else if (role === "daku") timesDaku++;
+
+    if (playerId === round.mantriId || role === "mantri") {
+      if (round.isCorrect) correctGuesses++;
+      else wrongGuesses++;
+    }
+  }
+
+  const wins = allWinners.filter((w) => w === playerId).length;
+
   return {
-    gamesPlayed: 0,
-    wins: 0,
-    highestScore: 0,
-    totalScore: 0,
-    timesRaja: 0,
-    timesMantri: 0,
-    timesChor: 0,
-    timesDaku: 0,
-    correctGuesses: 0,
-    wrongGuesses: 0,
+    gamesPlayed: 1,
+    wins,
+    highestScore,
+    totalScore,
+    timesRaja,
+    timesMantri,
+    timesChor,
+    timesDaku,
+    correctGuesses,
+    wrongGuesses,
   };
 }
 
-/**
- * Counts how many times a player received each role.
- */
 export function countRoles(
-  _playerId: string,
-  _roundHistory: RoundResult[]
+  playerId: string,
+  rounds: RoundHistoryEntry[]
 ): Record<GameRole, number> {
-  // TODO: Implement in Batch 5
-  return { raja: 0, mantri: 0, chor: 0, daku: 0 };
+  const counts: Record<GameRole, number> = { raja: 0, mantri: 0, chor: 0, daku: 0 };
+  for (const round of rounds) {
+    const role = round.roles[playerId];
+    if (role) counts[role]++;
+  }
+  return counts;
 }

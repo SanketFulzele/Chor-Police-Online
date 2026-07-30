@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { useSocketStore } from "../store/socketStore";
 import { useRoomStore } from "../store/roomStore";
+import { SocketEvents } from "../../shared/socket/events";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3001";
 
@@ -38,11 +39,11 @@ export function useSocket() {
       setStatus("disconnected");
     });
 
-    newSocket.on("room-updated", ({ room }) => {
+    newSocket.on(SocketEvents.ROOM_UPDATED, ({ room }) => {
       setRoom(room);
     });
 
-    newSocket.on("room-destroyed", () => {
+    newSocket.on(SocketEvents.ROOM_DESTROYED, () => {
       useRoomStore.getState().reset();
     });
 
@@ -52,8 +53,8 @@ export function useSocket() {
       newSocket.off("connect");
       newSocket.off("disconnect");
       newSocket.off("connect_error");
-      newSocket.off("room-updated");
-      newSocket.off("room-destroyed");
+      newSocket.off(SocketEvents.ROOM_UPDATED);
+      newSocket.off(SocketEvents.ROOM_DESTROYED);
     };
   }, [setSocket, setStatus, setRoom, socket?.connected]);
 }

@@ -1,36 +1,47 @@
 import type { ScoreInput, ScoreOutput } from "./types";
 
-/**
- * SCORING RULES
- *
- * If Mantri correctly identifies Chor:
- *   Raja   +1000
- *   Mantri  +500
- *   Daku    +300
- *   Chor       0
- *
- * If Mantri incorrectly chooses Daku:
- *   Raja   +1000
- *   Mantri     0
- *   Daku    +300
- *   Chor    +500
- */
+const RAJA_POINTS = 1000;
+const MANTRI_CORRECT_POINTS = 500;
+const MANTRI_WRONG_POINTS = 0;
+const DAKU_POINTS = 300;
+const CHOR_CORRECT_POINTS = 0;
+const CHOR_WRONG_POINTS = 500;
 
-/**
- * Calculates round scores based on roles and Mantri's choice.
- */
-export function calculateScores(_input: ScoreInput): ScoreOutput {
-  // TODO: Implement in Batch 4
-  throw new Error("Not implemented");
+export function calculateScores(input: ScoreInput): ScoreOutput {
+  const { chosenId, roles } = input;
+  const chosenRole = roles[chosenId];
+
+  const isCorrect = chosenRole === "chor";
+
+  const scores: Record<string, number> = {};
+
+  for (const [playerId, role] of Object.entries(roles)) {
+    switch (role) {
+      case "raja":
+        scores[playerId] = RAJA_POINTS;
+        break;
+      case "mantri":
+        scores[playerId] = isCorrect ? MANTRI_CORRECT_POINTS : MANTRI_WRONG_POINTS;
+        break;
+      case "chor":
+        scores[playerId] = isCorrect ? CHOR_CORRECT_POINTS : CHOR_WRONG_POINTS;
+        break;
+      case "daku":
+        scores[playerId] = DAKU_POINTS;
+        break;
+    }
+  }
+
+  return { scores, isCorrect };
 }
 
-/**
- * Accumulates a new round's scores into running totals.
- */
 export function accumulateScores(
   previousScores: Record<string, number>,
-  _roundScores: Record<string, number>
+  roundScores: Record<string, number>
 ): Record<string, number> {
-  // TODO: Implement in Batch 4
-  return previousScores;
+  const result: Record<string, number> = { ...previousScores };
+  for (const [playerId, score] of Object.entries(roundScores)) {
+    result[playerId] = (result[playerId] ?? 0) + score;
+  }
+  return result;
 }

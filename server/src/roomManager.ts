@@ -59,6 +59,8 @@ export function createRoom(
         roleHistory: [],
         currentScore: 0,
         totalScore: 0,
+        hasRevealed: false,
+        hasHidden: false,
         statistics: {
           gamesPlayed: 0,
           wins: 0,
@@ -75,6 +77,7 @@ export function createRoom(
       },
     ],
     createdAt: now,
+    roundHistory: [],
   };
 
   rooms.set(code, room);
@@ -112,11 +115,13 @@ export function joinRoom(
     avatarColor: getNextColor(),
     joinedAt: now,
     roleHistory: [],
-    currentScore: 0,
-    totalScore: 0,
-    statistics: {
-      gamesPlayed: 0,
-      wins: 0,
+      currentScore: 0,
+      totalScore: 0,
+      hasRevealed: false,
+      hasHidden: false,
+      statistics: {
+        gamesPlayed: 0,
+        wins: 0,
       highestScore: 0,
       totalScore: 0,
       timesRaja: 0,

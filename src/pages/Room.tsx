@@ -6,6 +6,7 @@ import { useSocket } from "../hooks/useSocket";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { useRoom } from "../hooks/useRoom";
+import { SocketEvents } from "../../shared/socket/events";
 
 export function Room() {
   const navigate = useNavigate();
@@ -31,9 +32,9 @@ export function Room() {
       navigate("/game");
     };
 
-    socket.on("game-starting", handleGameStarting);
+    socket.on(SocketEvents.GAME_STARTING, handleGameStarting);
     return () => {
-      socket.off("game-starting", handleGameStarting);
+      socket.off(SocketEvents.GAME_STARTING, handleGameStarting);
     };
   }, [navigate]);
 

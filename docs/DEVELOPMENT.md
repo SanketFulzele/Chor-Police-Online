@@ -6,9 +6,9 @@
 
 | Metric             | Value                                      |
 | ------------------ | ------------------------------------------ |
-| **Current Milestone** | Batch 2 — Multiplayer Lobby & WebSocket Foundation ✅ |
-| **Overall Progress** | ~35%                                      |
-| **Current Phase**    | Lobby complete. Gameplay implementation begins in Batch 3. |
+| **Current Milestone** | Batch 5 — End Game, Persistence & Production Polish ✅ |
+| **Overall Progress** | ~90%                                      |
+| **Current Phase**    | Complete game lifecycle with end-game flow, winner announcement, persistent history, player statistics, error boundaries, reconnect handling, sound system. |
 
 ---
 
@@ -171,79 +171,106 @@ Socket IDs change on reconnection. Player IDs need to be stable across reconnect
 
 ## Files & Structure
 
+### Shared (`shared/`)
+
+| Path                          | Lines | Purpose                               |
+| ----------------------------- | ----- | ------------------------------------- |
+| `shared/socket/events.ts`     | 41    | SocketEvents constants (all event names) |
+| `shared/socket/payloads.ts`   | 88    | Typed payload interfaces for all events |
+| `shared/socket/types.ts`      | 56    | GameRole, GamePhase, Player, Room types |
+| `shared/socket/index.ts`      | 24    | Barrel re-export                       |
+
 ### Frontend (`src/`)
 
-| Path                        | Lines | Purpose                                   |
-| --------------------------- | ----- | ----------------------------------------- |
-| `src/main.tsx`              | 10    | React entry point, renders App            |
-| `src/App.tsx`               | 22    | BrowserRouter + Routes with AppLayout     |
-| `src/index.css`             | 85    | Tailwind v4 + `@theme` tokens + utilities |
-| `src/vite-env.d.ts`         | 1     | Vite type reference                       |
-| `src/types/index.ts`        | 70    | GameRole, GamePhase, Player, Room, etc.   |
-| `src/constants/game.ts`     | 49    | Role points, scoring, phase durations     |
-| `src/store/socketStore.ts`  | 23    | Socket connection state                   |
-| `src/store/roomStore.ts`    | 31    | Room + player state                       |
-| `src/hooks/useSocket.ts`    | 58    | Socket connection lifecycle               |
-| `src/hooks/useRoom.ts`      | 82    | Room CRUD operations                      |
-| `src/components/ui/Button.tsx` | 40 | Reusable button with 4 variants           |
-| `src/components/ui/Card.tsx` | 16    | Glassmorphism container                   |
-| `src/components/ui/Input.tsx` | 36  | Form input with validation                |
-| `src/components/layout/AppLayout.tsx` | 20 | Layout wrapper + socket init     |
-| `src/pages/Home.tsx`        | 58    | Landing page                              |
-| `src/pages/CreateRoom.tsx`  | 95    | Room creation form                        |
-| `src/pages/JoinRoom.tsx`    | 108   | Room joining form                         |
-| `src/pages/Room.tsx`        | 175   | Real-time waiting lobby                   |
-| `src/pages/Game.tsx`        | 32    | Game placeholder                          |
-| `src/game/types.ts`              | 86    | Game engine type definitions              |
-| `src/game/gameEngine.ts`         | 51    | Game orchestrator                         |
-| `src/game/gameStateMachine.ts`   | 68    | Phase definitions and transitions         |
-| `src/game/roleDistributor.ts`    | 74    | Role rotation algorithm design + stubs    |
-| `src/game/scoreCalculator.ts`    | 38    | Score calculator stubs                    |
-| `src/game/roundManager.ts`       | 53    | Round tracking stubs                      |
-| `src/game/winnerCalculator.ts`   | 56    | Winner and leaderboard stubs              |
-| `src/game/statisticsManager.ts`  | 63    | Player statistics stubs                   |
-| `src/game/validators.ts`         | 73    | Game action validation stubs              |
-| `src/game/index.ts`              | 10    | Barrel export                             |
+| Path                               | Lines | Purpose                                   |
+| ---------------------------------- | ----- | ----------------------------------------- |
+| `src/main.tsx`                     | 10    | React entry point, renders App            |
+| `src/App.tsx`                      | 22    | BrowserRouter + Routes with AppLayout     |
+| `src/index.css`                    | 85    | Tailwind v4 + `@theme` tokens + utilities |
+| `src/vite-env.d.ts`                | 1     | Vite type reference                       |
+| `src/types/index.ts`               | 10    | Re-exports from shared + local types      |
+| `src/constants/game.ts`            | 52    | Role points, scoring, phase durations     |
+| `src/store/socketStore.ts`         | 23    | Socket connection state                   |
+| `src/store/roomStore.ts`           | 31    | Room + player state                       |
+| `src/store/gameStore.ts`           | 55    | Game phase, role, card state              |
+| `src/hooks/useSocket.ts`           | 53    | Socket connection lifecycle               |
+| `src/hooks/useRoom.ts`             | 79    | Room CRUD operations                      |
+| `src/hooks/useGame.ts`             | 175   | Game socket event listeners + actions     |
+| `src/hooks/usePersistence.ts`      | 28    | LocalStorage game history persistence     |
+| `src/hooks/useSound.ts`            | 48    | AudioContext-based sound effects          |
+| `src/components/ui/Button.tsx`     | 40    | Reusable button with 4 variants           |
+| `src/components/ui/Card.tsx`       | 16    | Glassmorphism container                   |
+| `src/components/ui/Input.tsx`      | 36    | Form input with validation                |
+| `src/components/layout/AppLayout.tsx` | 20 | Layout wrapper + socket init            |
+| `src/components/game/Card.tsx`     | 72    | 3D flip card with role display            |
+| `src/components/game/ShuffleAnimation.tsx` | 30 | Card shuffle animation          |
+| `src/components/game/WaitingProgress.tsx` | 28 | Player reveal/hide status         |
+| `src/pages/Home.tsx`               | 58    | Landing page                              |
+| `src/pages/CreateRoom.tsx`         | 96    | Room creation form                        |
+| `src/pages/JoinRoom.tsx`           | 112   | Room joining form                         |
+| `src/pages/Room.tsx`               | 248   | Real-time waiting lobby                   |
+| `src/pages/Game.tsx`               | 650   | Game page with phase-based rendering      |
+| `src/pages/History.tsx`            | 180   | Game history page                         |
+| `src/game/types.ts`                | 86    | Game engine type definitions              |
+| `src/game/gameEngine.ts`           | 540   | Game orchestrator                         |
+| `src/game/gameStateMachine.ts`     | 68    | Phase definitions and transitions         |
+| `src/game/roleDistributor.ts`      | 74    | Role rotation algorithm                   |
+| `src/game/scoreCalculator.ts`      | 38    | Score calculator stubs                    |
+| `src/game/roundManager.ts`         | 53    | Round tracking                            |
+| `src/game/winnerCalculator.ts`     | 72    | Winner and leaderboard implementation     |
+| `src/game/statisticsManager.ts`    | 73    | Player statistics implementation          |
+| `src/game/validators.ts`           | 73    | Game action validation stubs              |
+| `src/game/index.ts`                | 10    | Barrel export                             |
+| `src/components/ErrorBoundary.tsx` | 41    | Global error boundary component           |
+| `src/game/validators.ts`           | 73    | Game action validation stubs              |
+| `src/game/index.ts`                | 10    | Barrel export                             |
 
 ### Backend (`server/src/`)
 
 | Path                          | Lines | Purpose                               |
 | ----------------------------- | ----- | ------------------------------------- |
-| `server/src/index.ts`         | 174   | Express + Socket.IO server + handlers |
-| `server/src/roomManager.ts`   | 237   | Room CRUD, code generation, players   |
-| `server/src/types.ts`         | 49    | Shared type definitions               |
+| `server/src/index.ts`         | 190   | Express + Socket.IO server + handlers |
+| `server/src/gameHandler.ts`   | 145   | Game-phase socket event handlers      |
+| `server/src/roomManager.ts`   | 245   | Room CRUD, code generation, players   |
+| `server/src/types.ts`         | 10    | Re-exports from shared/socket/types   |
 
 ---
 
 ## Pending Features
 
-### Batch 3 — Game Logic & Card System
-- [ ] Implement `roleDistributor.ts` — deficit-based fair rotation algorithm
-- [ ] Implement `gameEngine.ts` — wire up phase transitions with actual game flow
-- [ ] Implement `validators.ts` — game start validation
-- [ ] Card component with 3D flip animation (face-down → face-up → face-down)
-- [ ] Socket events for role distribution and card reveal/hide phases
-- [ ] Client-side game store and game-specific hooks
-- [ ] Game page real-time UI with player cards
+### Batch 3 — Game Logic & Card System ✅
+- [x] Implement `roleDistributor.ts` — deficit-based fair rotation algorithm
+- [x] Implement `gameEngine.ts` — wire up phase transitions with actual game flow
+- [x] Card component with 3D flip animation (face-down → face-up → face-down)
+- [x] Socket events for role distribution and card reveal/hide phases
+- [x] Client-side game store and game-specific hooks
+- [x] Game page real-time UI with player cards
 
-### Batch 4 — Game Flow (Raja → Mantri → Chor)
-- [ ] Raja calls Mantri phase
-- [ ] Mantri reveal animation
-- [ ] Mantri chooses Chor (player selection UI)
-- [ ] Result calculation and scoring
-- [ ] Result animation + confetti
-- [ ] Score update + leaderboard
-- [ ] Next round / end game flow
+### Batch 4 — Game Flow (Raja → Mantri → Chor) ✅
+- [x] Raja calls Mantri phase
+- [x] Mantri reveal animation
+- [x] Mantri chooses Chor (player selection UI with confirm)
+- [x] Result calculation and scoring
+- [x] Score update + leaderboard
+- [x] Next round
 
-### Batch 5 — Polish & Persistence
-- [ ] Local storage for game history
-- [ ] Player statistics page
-- [ ] End game screen with winner
-- [ ] Round history view
-- [ ] Error boundaries on all pages
-- [ ] Loading skeletons
-- [ ] Mobile responsiveness polish
-- [ ] Sound effects
+### Batch 5 — End Game, Persistence & Production Polish ✅
+- [x] End game flow — host ends session, final results displayed with podium
+- [x] `endGame()` in game engine — validates host + leaderboard phase, sets phase to finished, computes winner + statistics
+- [x] `winnerCalculator.ts` — fully implemented: `calculateLeaderboard()`, `determineWinner()`, `buildGameResult()`, `hasTie()`
+- [x] `statisticsManager.ts` — fully implemented: `calculatePlayerStats()` (games played, wins, highestScore, totalScore, role counts, correct/wrong guesses)
+- [x] `GAME_OVER` event — broadcasts winner, final leaderboard, per-player statistics, and round history
+- [x] `END_GAME` socket event — server handler added
+- [x] Game over screen — trophy animation, podium with medals, player statistics grid
+- [x] Local storage persistence — `usePersistence` hook, auto-saves on game end
+- [x] History page (`/history`) — game list view + detail view with round-by-round breakdown
+- [x] Round history saved to Room type (`roundHistory` array)
+- [x] Reconnect handling — `RECONNECT` event, `updatePlayerSocket`, `RECONNECT_STATE` payload, `PLAYER_RECONNECTED` broadcast
+- [x] Disconnect handling — `PLAYER_DISCONNECTED` event broadcast
+- [x] Error boundary — `ErrorBoundary` component wrapping entire app
+- [x] Sound system — `useSound` hook with AudioContext-based tones (flip, reveal, correct, wrong, victory) with mute toggle and localStorage persistence
+- [x] All socket event contracts updated with new payloads
+- [x] Zero lint errors, zero tsc errors, successful vite build + server tsc build
 
 ### Future
 - Spectator mode
@@ -261,13 +288,10 @@ Socket IDs change on reconnection. Player IDs need to be stable across reconnect
 ## Known Issues
 
 ### Technical Debt
-- `Game.tsx` is a placeholder — no game logic yet
 - `utils/` directory is empty (no utility functions extracted yet)
-- No client-side error boundary — errors in one component can crash the entire page
 - Server has no persistence — all rooms are lost on server restart
 - No rate limiting on room creation — a client could spam `create-room`
-- `start-game` handler transitions the phase but no actual game logic follows
-- `getRoomBySocketId` and `updatePlayerSocket` in roomManager are exported but unused (kept for future reconnect logic)
+- No guess timeout — Mantri can take unlimited time to guess
 - `destroyRoom` in roomManager is unused (rooms are cleaned up when all players leave via `leaveRoom`)
 - Room code is passed via URL search params — not secure, should use socket state in production
 
@@ -280,26 +304,187 @@ Socket IDs change on reconnection. Player IDs need to be stable across reconnect
 
 ## Next Milestone
 
-### Batch 3 — Game Logic & Card System
+### Batch 6 — Polish & Production Readiness
 
-**Objective:** Implement the core game loop mechanics — role distribution, card system, and game phase state machine. The Game Engine architecture (created in Pre-Batch 3) provides the scaffolding.
+**Objective:** Final visual polish, mobile responsiveness, performance optimization, and production deployment readiness.
 
 **Key deliverables:**
-1. Implement `roleDistributor.ts` — deficit-based fair rotation algorithm
-2. Implement `gameEngine.ts` — wire up phase transitions with actual game flow
-3. Implement `validators.ts` — game start validation
-4. Card component with 3D flip animation (face-down → face-up → face-down)
-5. Socket events for role distribution and card reveal/hide phases
-6. Client-side game store and hooks
-7. Real-time game UI showing cards and phase state
-
-**Entry criteria:** Four players can start a game from the waiting lobby.
-
-**Exit criteria:** Four players can receive cards, flip them to reveal roles, and hide them again, all synchronized in real-time.
+1. Result animation — confetti, role reveals, score popups
+2. Mobile responsiveness polish across all screens
+3. Loading skeletons for all async states
+4. Performance optimization (memo, lazy loading)
+5. Accessibility improvements (ARIA labels, keyboard nav)
+6. Production Docker configuration
+7. End-to-end testing
+8. Final code cleanup and documentation review
 
 ---
 
 ## Changelog
+
+### Architecture Refactor — 2026-07-30 — Game Engine as Single Execution Layer
+
+**Goal:** Make the Game Engine (`src/game/gameEngine.ts`) the single owner of all gameplay rules. Socket handlers become thin controllers that only receive events, validate auth, call the engine, and broadcast results.
+
+**Changed**
+- `src/game/gameEngine.ts` — Complete rewrite from 72 lines to 377 lines. Now contains ALL gameplay logic:
+  - Validation: `revealCard`, `hideCard`, `callMantri`, `submitGuess`, `startGame`, `nextRound` all self-validate
+  - Execution: each action mutates the `Room`/`Player` objects directly and returns typed events to emit
+  - Scheduling: returns `ScheduledEvent[]` for timed phase transitions (shuffling → card-distribution, reveal-roles → score-update → leaderboard)
+  - Phase advancement: `advanceToPhase(room, phase)` uses `canTransition()` from `gameStateMachine.ts` and auto-handles role distribution when leaving shuffling
+  - Scoring: calls `calculateScores()` from `scoreCalculator.ts` — single source of truth
+  - All gameplay validation (phase checks, role checks, target validity, host checks, duplicate actions) lives exclusively in the engine
+  - No socket.io, no express, no react imports — pure TypeScript logic
+- `server/src/gameHandler.ts` — Complete rewrite from 237 lines to 108 lines as thin controller:
+  - Each handler: `getPlayerBySocketId` (auth) → call engine → `emitResult()` (generic broadcast helper)
+  - `emitResult()` handles: ROOM_UPDATED broadcast, event emission, targeted per-player events, and scheduled transitions
+  - `scheduleOrApply()` handles timed auto-advancement (setTimeout) and 0-delay immediate transitions with phase guards
+  - No gameplay logic — no validation, no phase transitions, no score calculation, no role distribution
+- `server/tsconfig.json` — Added `"../src/game"` to includes so server can import the game engine
+- `src/types/index.ts` — Fixed type import: `GameRole` now properly imported locally (not just re-exported) to support server-side compilation
+
+**Removed**
+- All duplicate gameplay logic from `server/src/gameHandler.ts`:
+  - `distributeRoles()` — server-side role distribution (was duplicate of `roleDistributor.ts`)
+  - `calculateScores()` — server-side scoring (was duplicate of `scoreCalculator.ts`)
+  - `accumulateScores()` — server-side score accumulation (was duplicate of `scoreCalculator.ts`)
+  - All inline validation for phase, role, target, host checks
+  - All inline phase transition code (`room.phase = "..."`)
+  - All inline setTimeout scheduling
+- Resolved technical debt items:
+  - "Score calculation logic is duplicated between server and engine" — now single source in `scoreCalculator.ts`
+  - "Phase transitions are hardcoded in event handlers" — now centralized through `advanceToPhase()` + `gameStateMachine.ts`
+
+**Execution flow (new):**
+```
+Client → Socket Event → Server Handler (auth) → Game Engine (validate + mutate + return events)
+                                                  ↓
+                                            emitResult() → ROOM_UPDATED + specific events
+                                                  ↓
+                                            scheduleOrApply() → setTimeout → advanceToPhase()
+```
+
+**Server handler pattern (every action follows this):**
+```
+socket.on(EVENT, (payload) => {
+  const ctx = getPlayerBySocketId(socket.id);
+  if (!ctx) return;
+  const result = engine.action(ctx.room, ctx.player, payload);
+  emitResult(ctx.room, result, io, socket);
+});
+```
+
+### Batch 5 — 2026-07-30 — End Game, Persistence & Production Polish
+
+**Added**
+- `src/game/winnerCalculator.ts` — Fully implemented `calculateLeaderboard()`, `determineWinner()`, `buildGameResult()`, `hasTie()`. Leaderboard sorts by total score descending. Role counts tracked per player. `buildGameResult()` returns full `GameResult` with winner, leaderboard, round history, and timestamp.
+- `src/game/statisticsManager.ts` — Fully implemented `calculatePlayerStats()` and `countRoles()`. Tracks: games played, wins, highest score, total score, per-role counts, correct/wrong guesses as Mantri. Used by `endGame()` to update per-player lifetime statistics.
+- `src/game/gameEngine.ts` — Added `endGame()` function: validates host + leaderboard phase, sets phase to `finished`, pushes `GAME_OVER` event with winner, leaderboard, player statistics, and round history. Push to `room.roundHistory` added in `submitGuess()`. `validateAction()` updated with new action types.
+- `shared/socket/events.ts` — Added `GAME_OVER`, `RECONNECT`, `PLAYER_RECONNECTED`, `RECONNECT_STATE`, `PLAYER_DISCONNECTED` events.
+- `shared/socket/payloads.ts` — Added `GameOverPayload`, `ReconnectPayload`, `ReconnectStatePayload`, `PlayerReconnectedPayload`, `PlayerDisconnectedPayload`. Updated `SocketPayloadMap` with all new event → payload mappings. Added import for `PlayerStatistics`.
+- `shared/socket/types.ts` — Added `RoundHistoryEntry` interface. Added `roundHistory`, `winnerId`, `winnerName`, `finishedAt` fields to `Room` interface.
+- `server/src/gameHandler.ts` — Added `END_GAME` handler (thin pattern).
+- `server/src/index.ts` — Added `RECONNECT` handler that validates room + player, updates socket, emits `RECONNECT_STATE` + `PLAYER_RECONNECTED`. Added `PLAYER_DISCONNECTED` broadcast on disconnect. Imported `updatePlayerSocket`.
+- `src/store/gameStore.ts` — Added `winnerId`, `winnerName`, `playerStatistics`, `roundHistory` fields. Added `setGameOver()` setter that populates all end-game state and sets phase to "finished".
+- `src/hooks/useGame.ts` — Added `GAME_OVER` listener calling `setGameOver()`. Added `endGame()` action emitting `END_GAME`.
+- `src/pages/Game.tsx` — Added **finished phase rendering**: trophy animation, winner avatar with gold border, podium with medals, per-player statistics grid (role counts, guess accuracy). Added **leaderboard phase update**: "End Game" button for host alongside "Next Round". Added auto-save to localStorage on `GAME_OVER`. Auto-save effect deps fixed.
+- `src/hooks/usePersistence.ts` — New hook: `loadHistory()`, `saveGame()`, `clearHistory()`. Stores up to 50 games in `localStorage` under `chor-police-history` key.
+- `src/pages/History.tsx` — New route `/history`. Two views: list view (game summaries with winner, date, rounds, player scores) and detail view (podium + round-by-round role breakdown). Toggle via `selectedGame` state. Framer Motion `AnimatePresence` transitions.
+- `src/components/ErrorBoundary.tsx` — Global error boundary component. Catches rendering errors, displays error message + "Back to Home" button, logs to console. Wraps entire app in `App.tsx`.
+- `src/hooks/useSound.ts` — New hook: `play()`, `isMuted`, `toggleMute()`. Uses `AudioContext` to play synthesized tones. Five sound types: flip (800Hz), reveal (1200Hz), correct (1400Hz), wrong (300Hz), victory (1800Hz). Mute state persisted to `localStorage`.
+- `server/src/roomManager.ts` — Initialize `roundHistory: []` on room creation.
+
+**Changed**
+- `src/pages/Game.tsx` — Major expansion of finished phase UI. Uses `winnerId`, `winnerName`, `leaderboard`, `playerStatistics`, `roundHistory` from gameStore. Calls `endGame()` from useGame hook. Auto-saves to persistence store.
+- `src/App.tsx` — Added `/history` route. Wrapped Routes with `ErrorBoundary`.
+- `shared/socket/types.ts` — Room interface extended with `roundHistory`, `winnerId`, `winnerName`, `finishedAt`.
+- `docs/PRODUCT.md` — Updated game flow step 10 with End Game button, added step 11 Game Over section. Updated File Responsibilities table. Moved end game, history, statistics, error boundaries from "Not Yet Implemented" to completed. Updated WebSocket event tables with new events.
+- `docs/DEVELOPMENT.md` — Updated milestone to Batch 5 (90% progress). Updated Batch 5 checklist to completed. Added Batch 5 changelog entry.
+
+**Removed**
+- Technical debt entries from Known Issues: "No end-game flow", "No winner announcement or game history", "`getRoomBySocketId` and `updatePlayerSocket` exported but unused" (now in use), "No error boundary".
+
+### Batch 4 — 2026-07-30 — Raja → Mantri → Guess → Round Result
+
+**Added**
+- Complete around game flow from card hide through leaderboard and next round
+- Server auto-detects Raja when all cards hidden and transitions to `raja-calling`
+- Raja selects Mantri via `call-mantri` event (validated: correct phase, is Raja, valid target)
+- Mantri identity broadcast to all players via `mantri-revealed` event
+- Mantri guesses Chor/Daku via `submit-guess` event with confirmation UI (tap → confirm)
+- Server validates guess (correct phase, is Mantri, valid target, not Raja/Mantri)
+- All roles revealed simultaneously via `roles-revealed` event
+- `scoreCalculator.ts` — fully implemented scoring logic (Correct: Raja +1000, Mantri +500, Daku +300, Chor +0; Wrong: Raja +1000, Mantri +0, Daku +300, Chor +500)
+- Server-side scoring (calculateScores, accumulateScores) called from gameHandler
+- Round result screen with per-player scores and totals
+- Leaderboard sorted by score with medal animations
+- Host "Next Round" button triggers fair role redistribution via gameHandler
+- Shared socket events for Batch 4: `CALL_MANTRI`, `MANTRI_REVEALED`, `SUBMIT_GUESS`, `GUESS_SUBMITTED`, `ROLES_REVEALED`, `ROUND_RESULT`, `SCORE_UPDATED`, `LEADERBOARD_UPDATED`, `NEXT_ROUND_STARTED`
+- Shared payloads for all new events (CallMantriPayload, MantriRevealedPayload, SubmitGuessPayload, GuessSubmittedPayload, RolesRevealedPayload, RoundResultPayload, ScoreUpdatedPayload, LeaderboardUpdatedPayload, NextRoundStartedPayload)
+- `mantriId` field added to shared Room type
+- Client game store (`gameStore.ts`) — added mantriId, revealedRoles, lastRoundResult, currentScores, currentTotals, leaderboard with setters
+- Client game hook (`useGame.ts`) — all new event listeners + `callMantri()`, `submitGuess()`, `nextRound()` actions
+- Game.tsx — complete phase-based rendering for all 7 new phases:
+  - `waiting-raja` / `raja-calling`: Raja sees player list to choose Mantri; others see waiting
+  - `mantri-reveal`: Scale-in spotlight animation of Mantri identity
+  - `guessing`: Mantri sees Chor/Daku selection with confirm flow; others see waiting
+  - `reveal-roles`: All roles shown with flip animation
+  - `score-update`: Correct/Wrong badge + per-player score breakdown
+  - `leaderboard`: Sorted leaderboard with medal emojis + Next Round button for host
+
+**Changed**
+- `server/src/gameHandler.ts` — Complete rewrite of all game phase transitions. Now handles `call-mantri`, `submit-guess`, `next-round` events. Auto-advances through reveal-roles → score-update → leaderboard with timed transitions. Removed unused `_canTransition`, `_getNextPhase`, and `_TRANSITIONS` (transition logic is now hardcoded in event handlers).
+- `shared/socket/events.ts` — Added 10 new event constants for Batch 4 game phases
+- `shared/socket/payloads.ts` — Added 10 new typed payload interfaces
+- `shared/socket/types.ts` — Added `mantriId` to Room interface
+- `shared/socket/index.ts` — Re-exported all new payload types
+- `src/pages/Game.tsx` — Replaced placeholder phase renderers with full game UI for all phases. Added `GuessButton` component with tap → confirm flow.
+- `src/store/gameStore.ts` — Expanded with RoundResultData interface and leaderboard/result state
+- `src/hooks/useGame.ts` — Registered 6 new socket event listeners and 3 new actions
+- `src/game/scoreCalculator.ts` — Fully implemented `calculateScores()` and `accumulateScores()`
+- `docs/PRODUCT.md` — Updated game flow (steps 5-10), scoring rules, WebSocket event tables, Game Engine Architecture status
+- `docs/DEVELOPMENT.md` — Updated milestone status to Batch 4, progress to ~65%
+
+**Architecture decisions**
+- Raja is identified automatically by the server from `currentRole` — no extra "you are raja" event is needed since the client already knows their role from `cards-distributed`.
+- The guess confirmation UI (tap → confirm) prevents misclicks without requiring complex undo logic.
+
+**Known limitations**
+- No disconnect handling during active game phases (raja disconnect, mantri disconnect)
+- No guess timeout — mantri can take unlimited time
+- No end-game flow — the game continues indefinitely with Next Round
+- No winner announcement or game history
+
+**Added**
+- `shared/socket/events.ts` — `SocketEvents` constant object: all event names as typed constants. No raw strings anywhere in the project for socket events.
+- `shared/socket/payloads.ts` — Strongly typed payload interfaces for every event (`CreateRoomPayload`, `JoinRoomPayload`, `RoomUpdatedPayload`, `CardsDistributedPayload`, etc.) with a `SocketPayloadMap` mapping each event to its payload type.
+- `shared/socket/types.ts` — Core domain types shared across the wire: `GameRole`, `GamePhase`, `Player`, `Room`, `PlayerStatistics`. Includes `currentRole`, `hasRevealed`, `hasHidden` fields used by both server and client during gameplay.
+- `shared/socket/index.ts` — Barrel re-export of all constants, types, and payloads.
+
+**Changed**
+- `server/src/types.ts` — Now re-exports from `shared/socket/types` instead of defining types independently.
+- `server/src/index.ts` — All socket event strings replaced with `SocketEvents` constants. Imports from `../../shared/socket/events`.
+- `server/src/gameHandler.ts` — All socket event strings replaced with `SocketEvents` constants. Imports from `../../shared/socket/events`.
+- `server/tsconfig.json` — Updated `rootDir` to `..` and `include` to `["src", "../shared"]` to compile shared files.
+- `server/package.json` — Updated `start` script to `node dist/server/src/index.js` (new output structure with shared files).
+- `src/types/index.ts` — Core types (`GameRole`, `GamePhase`, `Player`, `Room`, `PlayerStatistics`) now re-exported from `shared/socket/types`. Local types (`RoundRecord`, `StoredGame`, `ConnectionStatus`) remain.
+- `src/hooks/useSocket.ts` — `room-updated` and `room-destroyed` event strings replaced with `SocketEvents` constants.
+- `src/hooks/useRoom.ts` — All socket event strings replaced with `SocketEvents` constants.
+- `src/hooks/useGame.ts` — All socket event strings replaced with `SocketEvents` constants.
+- `src/pages/CreateRoom.tsx` — `create-room`, `room-created`, `error-message` replaced with `SocketEvents` constants.
+- `src/pages/JoinRoom.tsx` — `join-room`, `room-joined`, `error-message` replaced with `SocketEvents` constants.
+- `src/pages/Room.tsx` — `game-starting` replaced with `SocketEvents` constant.
+- `shared/socket/types.ts` — Added `currentRole`, `hasRevealed`, `hasHidden` fields to `Player` type (needed by both server and client).
+- `server/src/roomManager.ts` — Player creation now includes `hasRevealed: false` and `hasHidden: false`.
+- `shared/socket/types.ts` — `GamePhase` enum now includes all 13 game phases including `waiting-raja`, `card-hidden`, etc.
+
+**Removed**
+- Raw socket event name strings from all `.ts` and `.tsx` files (except native Socket.IO events `connect`, `disconnect`, `connect_error`).
+
+**Architecture decisions**
+- Shared contract is a plain TypeScript directory imported via relative paths. This avoids build-tool complexity (no npm link, no workspace setup) while providing compile-time safety to both sides.
+- Event names are **constants**, not enums, to compile to plain strings at runtime (enum values are inlined and can cause issues with module resolution).
+- Types are kept minimal in `shared/socket/types.ts` — only the domain types that travel over the wire. Internal types (e.g. `RoundRecord`, `StoredGame`) remain in their respective packages.
 
 ### Pre-Batch 3 — 2026-07-30 — Game Engine Architecture
 

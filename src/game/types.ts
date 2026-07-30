@@ -10,6 +10,7 @@ export type GamePhase =
   | "card-distribution"
   | "card-reveal"
   | "card-hidden"
+  | "waiting-raja"
   | "raja-calling"
   | "mantri-reveal"
   | "guessing"

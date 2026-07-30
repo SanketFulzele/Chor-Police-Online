@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useSocketStore } from "../store/socketStore";
 import { useRoomStore } from "../store/roomStore";
+import { SocketEvents } from "../../shared/socket/events";
 
 export function useRoom() {
   const socket = useSocketStore((s) => s.socket);
@@ -9,9 +10,9 @@ export function useRoom() {
   const createRoom = useCallback(
     (playerName: string) => {
       if (!socket) return;
-      socket.emit("create-room", { playerName });
+      socket.emit(SocketEvents.CREATE_ROOM, { playerName });
 
-      socket.once("room-created", ({ roomCode, playerId: id, room: r }) => {
+      socket.once(SocketEvents.ROOM_CREATED, ({ roomCode, playerId: id, room: r }) => {
         setPlayerId(id);
         setRoom(r);
         return { roomCode, playerId: id };
@@ -28,15 +29,15 @@ export function useRoom() {
           return;
         }
 
-        socket.emit("join-room", { roomCode, playerName });
+        socket.emit(SocketEvents.JOIN_ROOM, { roomCode, playerName });
 
-        socket.once("room-joined", ({ room: r, playerId: id }) => {
+        socket.once(SocketEvents.ROOM_JOINED, ({ room: r, playerId: id }) => {
           setPlayerId(id);
           setRoom(r);
           resolve({ success: true });
         });
 
-        socket.once("error-message", ({ message }) => {
+        socket.once(SocketEvents.ERROR_MESSAGE, ({ message }) => {
           resolve({ success: false, error: message });
         });
       });
@@ -46,7 +47,7 @@ export function useRoom() {
 
   const leaveRoom = useCallback(() => {
     if (!socket) return;
-    socket.emit("leave-room");
+    socket.emit(SocketEvents.LEAVE_ROOM);
     reset();
   }, [socket, reset]);
 
@@ -54,15 +55,15 @@ export function useRoom() {
     if (!socket) return;
     const player = room?.players.find((p) => p.id === playerId);
     if (player?.isReady) {
-      socket.emit("player-unready");
+      socket.emit(SocketEvents.PLAYER_UNREADY);
     } else {
-      socket.emit("player-ready");
+      socket.emit(SocketEvents.PLAYER_READY);
     }
   }, [socket, room, playerId]);
 
   const startGame = useCallback(() => {
     if (!socket) return;
-    socket.emit("start-game");
+    socket.emit(SocketEvents.START_GAME);
   }, [socket]);
 
   return {

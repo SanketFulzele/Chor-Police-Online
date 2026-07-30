@@ -7,6 +7,7 @@ import { useRoomStore } from "../store/roomStore";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
+import { SocketEvents } from "../../shared/socket/events";
 
 interface JoinRoomForm {
   name: string;
@@ -37,19 +38,19 @@ export function JoinRoom() {
     setLoading(true);
     setError("");
 
-    socket.emit("join-room", {
+    socket.emit(SocketEvents.JOIN_ROOM, {
       roomCode: data.code.toUpperCase(),
       playerName: data.name,
     });
 
-    socket.once("room-joined", ({ room, playerId }) => {
+    socket.once(SocketEvents.ROOM_JOINED, ({ room, playerId }) => {
       setPlayerId(playerId);
       setRoom(room);
       setLoading(false);
       navigate(`/room?code=${room.code}`);
     });
 
-    socket.once("error-message", ({ message }) => {
+    socket.once(SocketEvents.ERROR_MESSAGE, ({ message }) => {
       setError(message);
       setLoading(false);
     });
