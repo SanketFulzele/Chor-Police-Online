@@ -222,7 +222,7 @@ export function GamePage() {
               </p>
             )}
 
-            {myRole === "raja" && rajaRevealed && (
+            {myRole === "raja" && rajaRevealed && phase === "card-reveal" && (
               <Button
                 className="gold-gradient text-black font-bold mt-3"
                 onClick={askForMantri}
