@@ -39,6 +39,7 @@ app.get("/health", (_req, res) => {
 function broadcastRoom(roomCode: string) {
   const room = getRoom(roomCode);
   if (!room) return;
+  console.log(`[broadcast] room=${roomCode} players=${room.players.length} phase=${room.phase}`);
   io.to(roomCode).emit(SocketEvents.ROOM_UPDATED, { room });
 }
 
@@ -46,6 +47,7 @@ io.on("connection", (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
   socket.on(SocketEvents.CREATE_ROOM, ({ playerName }: { playerName: string }) => {
+    console.log(`[event] CREATE_ROOM socket=${socket.id} name="${playerName}"`);
     if (!playerName || playerName.trim().length < 2) {
       socket.emit(SocketEvents.ERROR_MESSAGE, { message: "Name must be at least 2 characters" });
       return;
@@ -78,6 +80,7 @@ io.on("connection", (socket) => {
       }
 
       const playerId = uuidv4();
+      console.log(`[event] JOIN_ROOM socket=${socket.id} code="${roomCode}" name="${playerName}"`);
       const result = joinRoom(roomCode.trim().toUpperCase(), socket.id, playerName.trim(), playerId);
 
       if (result.error) {
@@ -86,6 +89,7 @@ io.on("connection", (socket) => {
       }
 
       socket.join(result.room.code);
+      console.log(`[join] socket=${socket.id} joined room=${result.room.code} players=${result.room.players.length}`);
       socket.emit(SocketEvents.ROOM_JOINED, { room: result.room, playerId });
       broadcastRoom(result.room.code);
     }
@@ -116,10 +120,12 @@ io.on("connection", (socket) => {
 
     const player = room.players.find((p) => p.id === playerId);
     if (!player) {
+      console.log(`[event] RECONNECT socket=${socket.id} FAILED: player ${playerId} not found in room ${roomCode}`);
       socket.emit(SocketEvents.ERROR_MESSAGE, { message: "Player not found in room", code: "PLAYER_NOT_FOUND" });
       return;
     }
 
+    console.log(`[event] RECONNECT socket=${socket.id} room=${roomCode} player=${player.name}`);
     updatePlayerSocket(room.code, player.id, socket.id);
     socket.join(room.code);
     socket.emit(SocketEvents.RECONNECT_STATE, { room, playerId, myRole: player.currentRole });
@@ -132,6 +138,7 @@ io.on("connection", (socket) => {
     if (!ctx) return;
 
     const { room, player } = ctx;
+    console.log(`[event] PLAYER_READY socket=${socket.id} player=${player.name} room=${room.code}`);
     const updated = togglePlayerReady(room.code, player.id);
     if (updated) {
       broadcastRoom(room.code);
@@ -155,6 +162,7 @@ io.on("connection", (socket) => {
     if (!ctx) return;
 
     const { room, player } = ctx;
+    console.log(`[event] disconnecting socket=${socket.id} player=${player.name} room=${room.code}`);
     const updatedRoom = setPlayerDisconnected(room.code, player.id);
 
     if (updatedRoom) {

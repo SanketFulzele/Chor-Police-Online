@@ -10,10 +10,19 @@ interface RoomState {
   reset: () => void;
 }
 
+function sanitizeRoom(room: Room | null): Room | null {
+  if (!room) return null;
+  return {
+    ...room,
+    players: room.players.map((p) => ({ ...p })),
+    roundHistory: room.roundHistory.map((r) => ({ ...r })),
+  };
+}
+
 export const useRoomStore = create<RoomState>((set) => ({
   room: null,
   playerId: null,
-  setRoom: (room) => set({ room }),
+  setRoom: (room) => set({ room: sanitizeRoom(room) }),
   setPlayerId: (id) => set({ playerId: id }),
   updatePlayer: (playerId, updates) =>
     set((state) => {
