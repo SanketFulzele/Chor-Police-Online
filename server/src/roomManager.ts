@@ -226,6 +226,7 @@ export function setPlayerDisconnected(
     if (nextHost) {
       room.hostId = nextHost.id;
       nextHost.isHost = true;
+      player.isHost = false;
     }
   }
 

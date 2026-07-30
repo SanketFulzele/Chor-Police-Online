@@ -133,9 +133,10 @@ io.on("connection", (socket) => {
     if (existing) {
       clearTimeout(existing);
       disconnectTimers.delete(key);
+      console.log(`[event] RECONNECT cancelled disconnect timer for ${player.name} in ${roomCode}`);
     }
 
-    console.log(`[event] RECONNECT socket=${socket.id} room=${roomCode} player=${player.name}`);
+    console.log(`[event] RECONNECT socket=${socket.id} room=${roomCode} player=${player.name} wasHost=${player.isHost} wasConnected=${player.isConnected}`);
     updatePlayerSocket(room.code, player.id, socket.id);
     socket.join(room.code);
     socket.emit(SocketEvents.RECONNECT_STATE, { room, playerId, myRole: player.currentRole });
@@ -169,7 +170,10 @@ io.on("connection", (socket) => {
 
   socket.on("disconnecting", () => {
     const ctx = getPlayerBySocketId(socket.id);
-    if (!ctx) return;
+    if (!ctx) {
+      console.log(`[event] disconnecting socket=${socket.id} (no player found — likely old socket after RECONNECT)`);
+      return;
+    }
 
     const { room, player } = ctx;
     console.log(`[event] disconnecting socket=${socket.id} player=${player.name} room=${room.code}`);
@@ -177,11 +181,17 @@ io.on("connection", (socket) => {
     const wasHost = player.isHost;
     const key = `${room.code}:${player.id}`;
     const timer = setTimeout(() => {
+      if (!disconnectTimers.has(key)) {
+        console.log(`[timer] race avoided for ${player.name} in ${room.code} (already reconnected)`);
+        return;
+      }
       disconnectTimers.delete(key);
+      console.log(`[timer] executing disconnect for ${player.name} in ${room.code}`);
       const updatedRoom = setPlayerDisconnected(room.code, player.id);
       if (updatedRoom) {
         io.to(room.code).emit(SocketEvents.PLAYER_DISCONNECTED, { playerId: player.id });
         if (wasHost) {
+          console.log(`[timer] host transferred from ${player.name} to ${updatedRoom.hostId} in ${room.code}`);
           io.to(room.code).emit(SocketEvents.HOST_CHANGED, { newHostId: updatedRoom.hostId });
         }
         broadcastRoom(room.code);
