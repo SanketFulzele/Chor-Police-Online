@@ -44,65 +44,23 @@ export interface CardsDistributedPayload {
 
 export interface PhaseChangedPayload {
   phase: string;
+  rajaId?: string;
+  mantriId?: string;
+  chosenId?: string;
+  chorId?: string;
+  isCorrect?: boolean;
 }
 
-// ---- Card action payloads ----
+// ---- Police selection payloads ----
 
-export interface RevealCardPayload {
-  playerId: string;
-}
-
-export interface HideCardPayload {
-  playerId: string;
-}
-
-// ---- Raja / Mantri payloads ----
-
-export interface CallMantriPayload {
+export interface PoliceSelectPayload {
   chosenId: string;
 }
 
-export interface MantriRevealedPayload {
-  mantriId: string;
-}
-
-// ---- Guessing payloads ----
-
-export interface SubmitGuessPayload {
+export interface PoliceSelectedPayload {
   chosenId: string;
-}
-
-export interface GuessSubmittedPayload {
-  playerId: string;
-}
-
-// ---- Round result payloads ----
-
-export interface RolesRevealedPayload {
-  roles: Record<string, GameRole>;
-}
-
-export interface RoundResultPayload {
-  roundNumber: number;
+  chorId: string;
   isCorrect: boolean;
-  scores: Record<string, number>;
-  roles: Record<string, GameRole>;
-  mantriId: string;
-  chosenId: string;
-}
-
-export interface ScoreUpdatedPayload {
-  scores: Record<string, number>;
-  totals: Record<string, number>;
-}
-
-export interface LeaderboardUpdatedPayload {
-  leaderboard: { playerId: string; name: string; score: number }[];
-}
-
-export interface NextRoundStartedPayload {
-  room: Room;
-  round: number;
 }
 
 // ---- End game payloads ----
@@ -156,14 +114,8 @@ export interface SocketPayloadMap {
   [SocketEvents.CREATE_ROOM]: CreateRoomPayload;
   [SocketEvents.JOIN_ROOM]: JoinRoomPayload;
   [SocketEvents.LEAVE_ROOM]: undefined;
-  [SocketEvents.PLAYER_READY]: undefined;
-  [SocketEvents.PLAYER_UNREADY]: undefined;
   [SocketEvents.START_GAME]: undefined;
-  [SocketEvents.REVEAL_CARD]: undefined;
-  [SocketEvents.HIDE_CARD]: undefined;
-  [SocketEvents.CALL_MANTRI]: CallMantriPayload;
-  [SocketEvents.SUBMIT_GUESS]: SubmitGuessPayload;
-  [SocketEvents.NEXT_ROUND]: undefined;
+  [SocketEvents.POLICE_SELECT]: PoliceSelectPayload;
   [SocketEvents.END_GAME]: undefined;
   [SocketEvents.RECONNECT]: ReconnectPayload;
 
@@ -175,15 +127,8 @@ export interface SocketPayloadMap {
   [SocketEvents.GAME_STARTING]: GameStartingPayload;
   [SocketEvents.CARDS_DISTRIBUTED]: CardsDistributedPayload;
   [SocketEvents.PHASE_CHANGED]: PhaseChangedPayload;
-  [SocketEvents.CARD_REVEALED]: RevealCardPayload;
-  [SocketEvents.CARD_HIDDEN]: HideCardPayload;
-  [SocketEvents.MANTRI_REVEALED]: MantriRevealedPayload;
-  [SocketEvents.GUESS_SUBMITTED]: GuessSubmittedPayload;
-  [SocketEvents.ROLES_REVEALED]: RolesRevealedPayload;
-  [SocketEvents.ROUND_RESULT]: RoundResultPayload;
-  [SocketEvents.SCORE_UPDATED]: ScoreUpdatedPayload;
-  [SocketEvents.LEADERBOARD_UPDATED]: LeaderboardUpdatedPayload;
-  [SocketEvents.NEXT_ROUND_STARTED]: NextRoundStartedPayload;
+  [SocketEvents.MANTRI_REVEALED]: { mantriId: string };
+  [SocketEvents.POLICE_SELECTED]: PoliceSelectedPayload;
   [SocketEvents.GAME_OVER]: GameOverPayload;
   [SocketEvents.RECONNECT_STATE]: ReconnectStatePayload;
   [SocketEvents.PLAYER_RECONNECTED]: PlayerReconnectedPayload;

@@ -9,7 +9,6 @@ import {
   leaveRoom,
   getRoom,
   getPlayerBySocketId,
-  togglePlayerReady,
   setPlayerDisconnected,
   updatePlayerSocket,
 } from "./roomManager.js";
@@ -131,30 +130,6 @@ io.on("connection", (socket) => {
     socket.emit(SocketEvents.RECONNECT_STATE, { room, playerId, myRole: player.currentRole });
     io.to(room.code).emit(SocketEvents.PLAYER_RECONNECTED, { playerId: player.id });
     io.to(room.code).emit(SocketEvents.ROOM_UPDATED, { room });
-  });
-
-  socket.on(SocketEvents.PLAYER_READY, () => {
-    const ctx = getPlayerBySocketId(socket.id);
-    if (!ctx) return;
-
-    const { room, player } = ctx;
-    console.log(`[event] PLAYER_READY socket=${socket.id} player=${player.name} room=${room.code}`);
-    const updated = togglePlayerReady(room.code, player.id);
-    if (updated) {
-      broadcastRoom(room.code);
-    }
-  });
-
-  socket.on(SocketEvents.PLAYER_UNREADY, () => {
-    const ctx = getPlayerBySocketId(socket.id);
-    if (!ctx) return;
-
-    const { room, player } = ctx;
-    if (!player.isReady) return;
-    const updated = togglePlayerReady(room.code, player.id);
-    if (updated) {
-      broadcastRoom(room.code);
-    }
   });
 
   socket.on("disconnecting", () => {

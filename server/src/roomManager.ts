@@ -53,7 +53,6 @@ export function createRoom(
         name: hostName,
         isHost: true,
         isConnected: true,
-        isReady: false,
         avatarColor: getNextColor(),
         joinedAt: now,
         roleHistory: [],
@@ -69,7 +68,7 @@ export function createRoom(
           timesRaja: 0,
           timesMantri: 0,
           timesChor: 0,
-          timesDaku: 0,
+          timesPolice: 0,
           correctGuesses: 0,
           wrongGuesses: 0,
           averageScore: 0,
@@ -111,7 +110,6 @@ export function joinRoom(
     name: playerName,
     isHost: false,
     isConnected: true,
-    isReady: false,
     avatarColor: getNextColor(),
     joinedAt: now,
     roleHistory: [],
@@ -122,16 +120,16 @@ export function joinRoom(
       statistics: {
         gamesPlayed: 0,
         wins: 0,
-      highestScore: 0,
-      totalScore: 0,
-      timesRaja: 0,
-      timesMantri: 0,
-      timesChor: 0,
-      timesDaku: 0,
-      correctGuesses: 0,
-      wrongGuesses: 0,
-      averageScore: 0,
-    },
+        highestScore: 0,
+        totalScore: 0,
+        timesRaja: 0,
+        timesMantri: 0,
+        timesChor: 0,
+        timesPolice: 0,
+        correctGuesses: 0,
+        wrongGuesses: 0,
+        averageScore: 0,
+      },
   };
 
   room.players.push(player);
@@ -180,17 +178,6 @@ export function getPlayerBySocketId(
   return null;
 }
 
-export function togglePlayerReady(code: string, playerId: string): Room | null {
-  const room = rooms.get(code);
-  if (!room) return null;
-
-  const player = room.players.find((p) => p.id === playerId);
-  if (!player) return null;
-
-  player.isReady = !player.isReady;
-  return room;
-}
-
 export function updatePlayerSocket(
   code: string,
   playerId: string,
@@ -235,8 +222,5 @@ export function destroyRoom(code: string): void {
 }
 
 export function canStartGame(room: Room): boolean {
-  return (
-    room.players.length === 4 &&
-    room.players.every((p) => p.isReady || p.isHost)
-  );
+  return room.players.length >= 4 && room.players.every((p) => p.isConnected);
 }

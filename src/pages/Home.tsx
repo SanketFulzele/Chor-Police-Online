@@ -50,7 +50,7 @@ export function Home() {
 
         <Card className="text-center">
           <p className="text-text-muted text-sm">
-            👑 Raja &middot; 👮 Mantri &middot; 🥷 Chor &middot; 🔫 Daku
+            👑 Raja &middot; 📜 Mantri &middot; 👮 Police &middot; 🥷 Chor
           </p>
         </Card>
       </motion.div>

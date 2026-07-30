@@ -3,9 +3,6 @@ import { SocketEvents } from "../shared/socket/events.js";
 import { canTransition } from "./gameStateMachine.js";
 import { distributeRoles } from "./roleDistributor.js";
 import type { RoleHistory } from "./types.js";
-import { calculateScores } from "./scoreCalculator.js";
-import { buildGameResult } from "./winnerCalculator.js";
-import { calculatePlayerStats } from "./statisticsManager.js";
 
 export interface EngineEvent {
   event: string;
@@ -32,27 +29,11 @@ export interface EngineResult {
 }
 
 const PHASE_DELAYS: Partial<Record<GamePhase, number>> = {
-  shuffling: 2500,
-  "waiting-raja": 500,
-  "mantri-reveal": 2500,
-  "reveal-roles": 3000,
-  "score-update": 2000,
+  "role-assignment": 2000,
+  "reveal-raja": 3000,
+  "reveal-mantri": 3000,
+  "reveal-result": 4000,
 };
-
-function getRoleMap(room: Room): Record<string, GameRole> {
-  const map: Record<string, GameRole> = {};
-  for (const p of room.players) {
-    if (p.currentRole) map[p.id] = p.currentRole;
-  }
-  return map;
-}
-
-function roleHistoryList(room: Room): RoleHistory[] {
-  return room.players.map((p) => ({
-    playerId: p.id,
-    roles: [...p.roleHistory],
-  }));
-}
 
 function invalid(msg: string, code: string): EngineResult {
   return { ok: false, error: { message: msg, code }, events: [], targetedEvents: [] };
@@ -76,257 +57,9 @@ export function startGame(room: Room, player: Player): EngineResult {
   const hostErr = validateHost(room, player);
   if (hostErr) return hostErr;
 
-  if (room.players.length !== 4 || !room.players.every((p) => p.isReady || p.isHost)) {
-    return invalid("Need 4 players, all ready", "INVALID_STATE");
+  if (room.players.length < 4 || !room.players.every((p) => p.isConnected)) {
+    return invalid("Need 4 players, all connected", "INVALID_STATE");
   }
-
-  for (const p of room.players) {
-    p.currentRole = undefined;
-    p.hasRevealed = false;
-    p.hasHidden = false;
-  }
-
-  room.phase = "shuffling";
-  room.round = 1;
-
-  const events: EngineEvent[] = [
-    { event: SocketEvents.GAME_STARTING, payload: {} },
-  ];
-
-  const schedule: ScheduledEvent[] = [
-    {
-      delay: PHASE_DELAYS.shuffling!,
-      fromPhase: "shuffling",
-      phase: "card-distribution",
-      events: [],
-    },
-  ];
-
-  return { ok: true, events, targetedEvents: [], schedule };
-}
-
-function distributeAndDeal(room: Room): EngineResult {
-  const playerIds = room.players.map((p) => p.id);
-  const roleHist = roleHistoryList(room);
-  const roundIndex = Math.max(0, room.round - 1);
-  const distribution = distributeRoles(playerIds, roleHist, roundIndex);
-
-  for (const p of room.players) {
-    p.currentRole = distribution.assignments[p.id];
-    p.roleHistory.push(distribution.assignments[p.id]);
-    p.hasRevealed = false;
-    p.hasHidden = false;
-  }
-
-  room.phase = "card-distribution";
-
-  const targetedEvents: TargetedEvent[] = [];
-  for (const p of room.players) {
-    targetedEvents.push({
-      event: SocketEvents.CARDS_DISTRIBUTED,
-      payload: { role: p.currentRole, phase: "card-distribution" },
-      playerId: p.id,
-    });
-  }
-
-  const schedule: ScheduledEvent[] = [
-    {
-      delay: 0,
-      fromPhase: "card-distribution",
-      phase: "card-reveal",
-      events: [{ event: SocketEvents.PHASE_CHANGED, payload: { phase: "card-reveal" } }],
-    },
-  ];
-
-  return { ok: true, events: [], targetedEvents, schedule };
-}
-
-export function revealCard(room: Room, player: Player): EngineResult {
-  const phaseErr = validatePhase(room, "card-reveal");
-  if (phaseErr) return phaseErr;
-
-  if (player.hasHidden) {
-    return invalid("Card already hidden", "ALREADY_HIDDEN");
-  }
-  if (player.hasRevealed) {
-    return invalid("Card already revealed", "ALREADY_REVEALED");
-  }
-
-  player.hasRevealed = true;
-
-  return {
-    ok: true,
-    events: [{ event: SocketEvents.CARD_REVEALED, payload: { playerId: player.id } }],
-    targetedEvents: [],
-  };
-}
-
-export function hideCard(room: Room, player: Player): EngineResult {
-  const phaseErr = validatePhase(room, "card-reveal");
-  if (phaseErr) return phaseErr;
-
-  if (!player.hasRevealed) {
-    return invalid("Card not revealed yet", "NOT_REVEALED");
-  }
-  if (player.hasHidden) {
-    return invalid("Card already hidden", "ALREADY_HIDDEN");
-  }
-
-  player.hasHidden = true;
-
-  const events: EngineEvent[] = [
-    { event: SocketEvents.CARD_HIDDEN, payload: { playerId: player.id } },
-  ];
-
-  const allHidden = room.players.every((p) => p.hasHidden);
-  if (allHidden) {
-    room.phase = "waiting-raja";
-    events.push({ event: SocketEvents.PHASE_CHANGED, payload: { phase: "waiting-raja" } });
-
-    const targetedEvents: TargetedEvent[] = [];
-    const raja = room.players.find((p) => p.currentRole === "raja");
-    if (raja) {
-      targetedEvents.push({
-        event: SocketEvents.PHASE_CHANGED,
-        payload: { phase: "waiting-raja" },
-        playerId: raja.id,
-      });
-    }
-
-    const schedule: ScheduledEvent[] = [
-      {
-        delay: PHASE_DELAYS["waiting-raja"]!,
-        fromPhase: "waiting-raja",
-        phase: "raja-calling",
-        events: [{ event: SocketEvents.PHASE_CHANGED, payload: { phase: "raja-calling" } }],
-      },
-    ];
-
-    return { ok: true, events, targetedEvents, schedule };
-  }
-
-  return { ok: true, events, targetedEvents: [] };
-}
-
-export function callMantri(room: Room, player: Player, chosenId: string): EngineResult {
-  const phaseErr = validatePhase(room, "raja-calling");
-  if (phaseErr) return phaseErr;
-
-  if (player.currentRole !== "raja") {
-    return invalid("Only the Raja can call the Mantri", "NOT_RAJA");
-  }
-
-  const target = room.players.find((p) => p.id === chosenId);
-  if (!target) {
-    return invalid("Invalid player", "INVALID_TARGET");
-  }
-  if (target.id === player.id) {
-    return invalid("Cannot choose yourself", "SELF_TARGET");
-  }
-  if (!target.isConnected) {
-    return invalid("Player disconnected", "TARGET_DISCONNECTED");
-  }
-
-  room.mantriId = chosenId;
-  room.phase = "mantri-reveal";
-
-  const events: EngineEvent[] = [
-    { event: SocketEvents.PHASE_CHANGED, payload: { phase: "mantri-reveal" } },
-    { event: SocketEvents.MANTRI_REVEALED, payload: { mantriId: chosenId } },
-  ];
-
-  const schedule: ScheduledEvent[] = [
-    {
-      delay: PHASE_DELAYS["mantri-reveal"]!,
-      fromPhase: "mantri-reveal",
-      phase: "guessing",
-      events: [{ event: SocketEvents.PHASE_CHANGED, payload: { phase: "guessing" } }],
-    },
-  ];
-
-  return { ok: true, events, targetedEvents: [], schedule };
-}
-
-export function submitGuess(room: Room, player: Player, chosenId: string): EngineResult {
-  const phaseErr = validatePhase(room, "guessing");
-  if (phaseErr) return phaseErr;
-
-  if (player.currentRole !== "mantri") {
-    return invalid("Only the Mantri can guess", "NOT_MANTRI");
-  }
-
-  const target = room.players.find((p) => p.id === chosenId);
-  if (!target) {
-    return invalid("Invalid player", "INVALID_TARGET");
-  }
-  if (target.currentRole === "raja" || target.currentRole === "mantri") {
-    return invalid("Cannot guess Raja or Mantri", "INVALID_TARGET");
-  }
-  if (!target.isConnected) {
-    return invalid("Player disconnected", "TARGET_DISCONNECTED");
-  }
-
-  const roles = getRoleMap(room);
-  const { scores, isCorrect } = calculateScores({ mantriId: room.mantriId!, chosenId, roles });
-
-  for (const p of room.players) {
-    p.currentScore = scores[p.id] ?? 0;
-    p.totalScore += p.currentScore;
-  }
-
-  room.roundHistory.push({
-    roundNumber: room.round,
-    roles,
-    mantriId: room.mantriId!,
-    chosenId,
-    isCorrect,
-    scores,
-  });
-
-  room.phase = "reveal-roles";
-
-  const events: EngineEvent[] = [
-    { event: SocketEvents.PHASE_CHANGED, payload: { phase: "reveal-roles" } },
-    { event: SocketEvents.GUESS_SUBMITTED, payload: { playerId: player.id } },
-    { event: SocketEvents.ROLES_REVEALED, payload: { roles } },
-  ];
-
-  const schedule: ScheduledEvent[] = [
-    {
-      delay: PHASE_DELAYS["reveal-roles"]!,
-      fromPhase: "reveal-roles",
-      phase: "score-update",
-      events: [
-        {
-          event: SocketEvents.ROUND_RESULT,
-          payload: {
-            roundNumber: room.round,
-            isCorrect,
-            scores,
-            roles,
-            mantriId: room.mantriId,
-            chosenId,
-          },
-        },
-      ],
-    },
-    {
-      delay: PHASE_DELAYS["reveal-roles"]! + PHASE_DELAYS["score-update"]!,
-      fromPhase: "score-update",
-      phase: "leaderboard",
-      events: [],
-    },
-  ];
-
-  return { ok: true, events, targetedEvents: [], schedule };
-}
-
-export function nextRound(room: Room, player: Player): EngineResult {
-  const hostErr = validateHost(room, player);
-  if (hostErr) return hostErr;
-
-  const phaseErr = validatePhase(room, "leaderboard");
-  if (phaseErr) return phaseErr;
 
   for (const p of room.players) {
     p.currentRole = undefined;
@@ -334,26 +67,119 @@ export function nextRound(room: Room, player: Player): EngineResult {
     p.hasHidden = false;
     p.currentScore = 0;
   }
+  room.round = 1;
   room.mantriId = undefined;
 
-  room.round += 1;
-  room.phase = "shuffling";
+  const playerIds = room.players.map((p) => p.id);
+  const roleHist: RoleHistory[] = room.players.map((p) => ({
+    playerId: p.id,
+    roles: [...p.roleHistory],
+  }));
+  const distribution = distributeRoles(playerIds, roleHist, 0);
+
+  for (const p of room.players) {
+    const role = distribution.assignments[p.id];
+    p.currentRole = role;
+    p.roleHistory.push(role);
+  }
+
+  room.phase = "role-assignment";
 
   const events: EngineEvent[] = [
-    { event: SocketEvents.PHASE_CHANGED, payload: { phase: "shuffling" } },
-    { event: SocketEvents.NEXT_ROUND_STARTED, payload: { round: room.round } },
+    { event: SocketEvents.GAME_STARTING, payload: {} },
   ];
+
+  const targetedEvents: TargetedEvent[] = room.players.map((p) => ({
+    event: SocketEvents.CARDS_DISTRIBUTED,
+    payload: { role: p.currentRole, phase: "role-assignment" },
+    playerId: p.id,
+  }));
 
   const schedule: ScheduledEvent[] = [
     {
-      delay: PHASE_DELAYS.shuffling!,
-      fromPhase: "shuffling",
-      phase: "card-distribution",
+      delay: PHASE_DELAYS["role-assignment"]!,
+      fromPhase: "role-assignment",
+      phase: "reveal-raja",
       events: [],
     },
   ];
 
-  return { ok: true, events, targetedEvents: [], schedule };
+  return { ok: true, events, targetedEvents, schedule };
+}
+
+export function policeSelect(room: Room, player: Player, chosenId: string): EngineResult {
+  const phaseErr = validatePhase(room, "police-selection");
+  if (phaseErr) return phaseErr;
+
+  if (player.currentRole !== "police") {
+    return invalid("Only the Police can make a selection", "NOT_POLICE");
+  }
+
+  const target = room.players.find((p) => p.id === chosenId);
+  if (!target) {
+    return invalid("Invalid player", "INVALID_TARGET");
+  }
+  if (target.id === player.id) {
+    return invalid("Cannot select yourself", "SELF_TARGET");
+  }
+  if (target.currentRole === "raja" || target.currentRole === "mantri") {
+    return invalid("Cannot select Raja or Mantri", "INVALID_TARGET");
+  }
+
+  const isCorrect = target.currentRole === "chor";
+  const chor = room.players.find((p) => p.currentRole === "chor");
+
+  const scores: Record<string, number> = {};
+  for (const p of room.players) {
+    let score = 0;
+    if (p.currentRole === "raja" || p.currentRole === "mantri" || p.currentRole === "police") {
+      score = isCorrect ? 500 : 0;
+    } else if (p.currentRole === "chor") {
+      score = isCorrect ? 0 : 500;
+    }
+    scores[p.id] = score;
+    p.currentScore = score;
+    p.totalScore += score;
+  }
+
+  const roles: Record<string, GameRole> = {};
+  for (const p of room.players) {
+    roles[p.id] = p.currentRole!;
+  }
+
+  room.mantriId = room.players.find((p) => p.currentRole === "mantri")?.id ?? "";
+  room.roundHistory.push({
+    roundNumber: room.round,
+    roles,
+    mantriId: room.mantriId,
+    chosenId,
+    isCorrect,
+    scores,
+  });
+
+  room.phase = "reveal-result";
+
+  const policeEvents: EngineEvent[] = [
+    {
+      event: SocketEvents.POLICE_SELECTED,
+      payload: { chosenId, chorId: chor?.id ?? "", isCorrect },
+    },
+    {
+      event: SocketEvents.PHASE_CHANGED,
+      payload: { phase: "reveal-result", chosenId, chorId: chor?.id ?? "", isCorrect },
+    },
+  ];
+
+  const schedule: ScheduledEvent[] = [
+    {
+      delay: PHASE_DELAYS["reveal-result"]!,
+      fromPhase: "reveal-result",
+      phase: "finished",
+      events: [],
+    },
+  ];
+
+  return { ok: true, events: policeEvents, targetedEvents: [], schedule };
 }
 
 export function advanceToPhase(room: Room, phase: GamePhase): EngineResult {
@@ -361,120 +187,152 @@ export function advanceToPhase(room: Room, phase: GamePhase): EngineResult {
     return invalid(`Cannot transition from ${room.phase} to ${phase}`, "INVALID_TRANSITION");
   }
 
-  if (room.phase === "shuffling") {
-    return distributeAndDeal(room);
-  }
-
   room.phase = phase;
-  const events: EngineEvent[] = [
-    { event: SocketEvents.PHASE_CHANGED, payload: { phase } },
-  ];
+  const events: EngineEvent[] = [];
+  const schedule: ScheduledEvent[] = [];
 
-  if (phase === "leaderboard") {
-    const scores: Record<string, number> = {};
-    const totals: Record<string, number> = {};
-    for (const p of room.players) {
-      scores[p.id] = p.currentScore;
-      totals[p.id] = p.totalScore;
+  if (phase === "reveal-raja") {
+    const raja = room.players.find((p) => p.currentRole === "raja");
+    events.push({
+      event: SocketEvents.PHASE_CHANGED,
+      payload: { phase: "reveal-raja", rajaId: raja?.id ?? "" },
+    });
+    schedule.push({
+      delay: PHASE_DELAYS["reveal-raja"]!,
+      fromPhase: "reveal-raja",
+      phase: "reveal-mantri",
+      events: [],
+    });
+  } else if (phase === "reveal-mantri") {
+    const mantri = room.players.find((p) => p.currentRole === "mantri");
+    events.push({
+      event: SocketEvents.PHASE_CHANGED,
+      payload: { phase: "reveal-mantri", mantriId: mantri?.id ?? "" },
+    });
+    schedule.push({
+      delay: PHASE_DELAYS["reveal-mantri"]!,
+      fromPhase: "reveal-mantri",
+      phase: "police-selection",
+      events: [],
+    });
+  } else if (phase === "police-selection") {
+    events.push({
+      event: SocketEvents.PHASE_CHANGED,
+      payload: { phase: "police-selection" },
+    });
+  } else if (phase === "finished") {
+    const isCorrect = room.roundHistory[room.roundHistory.length - 1]?.isCorrect ?? false;
+    const chor = room.players.find((p) => p.currentRole === "chor");
+
+    let winnerId = "";
+    let winnerName = "";
+    if (isCorrect) {
+      const winner = room.players.find((p) => p.currentRole === "raja");
+      if (winner) {
+        winnerId = winner.id;
+        winnerName = winner.name;
+      }
+    } else {
+      if (chor) {
+        winnerId = chor.id;
+        winnerName = chor.name;
+      }
     }
-    events.push({ event: SocketEvents.SCORE_UPDATED, payload: { scores, totals } });
+
+    room.winnerId = winnerId;
+    room.winnerName = winnerName;
+    room.finishedAt = Date.now();
 
     const leaderboard = room.players
       .map((p) => ({ playerId: p.id, name: p.name, score: p.totalScore }))
       .sort((a, b) => b.score - a.score);
-    events.push({ event: SocketEvents.LEADERBOARD_UPDATED, payload: { leaderboard } });
+
+    events.push({
+      event: SocketEvents.GAME_OVER,
+      payload: {
+        winnerId,
+        winnerName,
+        leaderboard,
+        playerStatistics: {},
+        roundHistory: room.roundHistory.map((r) => ({
+          roundNumber: r.roundNumber,
+          roles: r.roles,
+          mantriId: r.mantriId,
+          chosenId: r.chosenId,
+          isCorrect: r.isCorrect,
+          scores: r.scores,
+        })),
+      },
+    });
   }
 
-  return { ok: true, events, targetedEvents: [] };
+  return { ok: true, events, targetedEvents: [], schedule };
 }
 
 export function endGame(room: Room, player: Player): EngineResult {
   const hostErr = validateHost(room, player);
   if (hostErr) return hostErr;
 
-  const phaseErr = validatePhase(room, "leaderboard");
-  if (phaseErr) return phaseErr;
-
   room.phase = "finished";
   room.finishedAt = Date.now();
 
-  const playerNames: Record<string, string> = {};
-  for (const p of room.players) {
-    playerNames[p.id] = p.name;
-  }
+  const isCorrect = room.roundHistory[room.roundHistory.length - 1]?.isCorrect ?? false;
+  const chor = room.players.find((p) => p.currentRole === "chor");
 
-  const result = buildGameResult(room.code, room.roundHistory, playerNames);
-  room.winnerId = result.winnerId;
-  room.winnerName = result.winnerName;
-
-  const playerStats: Record<string, ReturnType<typeof calculatePlayerStats>> = {};
-  const allWinners = result.leaderboard
-    .filter((e) => e.totalScore === result.leaderboard[0].totalScore)
-    .map((e) => e.playerId);
-  for (const p of room.players) {
-    playerStats[p.id] = calculatePlayerStats(p.id, room.roundHistory, allWinners);
-    p.statistics.gamesPlayed += playerStats[p.id].gamesPlayed;
-    p.statistics.wins += playerStats[p.id].wins;
-    if (playerStats[p.id].highestScore > p.statistics.highestScore) {
-      p.statistics.highestScore = playerStats[p.id].highestScore;
+  let winnerId = "";
+  let winnerName = "";
+  if (isCorrect) {
+    const winner = room.players.find((p) => p.currentRole === "raja");
+    if (winner) {
+      winnerId = winner.id;
+      winnerName = winner.name;
     }
-    p.statistics.totalScore += playerStats[p.id].totalScore;
-    p.statistics.timesRaja += playerStats[p.id].timesRaja;
-    p.statistics.timesMantri += playerStats[p.id].timesMantri;
-    p.statistics.timesChor += playerStats[p.id].timesChor;
-    p.statistics.timesDaku += playerStats[p.id].timesDaku;
-    p.statistics.correctGuesses += playerStats[p.id].correctGuesses;
-    p.statistics.wrongGuesses += playerStats[p.id].wrongGuesses;
-    p.statistics.averageScore = p.statistics.totalScore / Math.max(1, p.statistics.gamesPlayed);
+  } else {
+    if (chor) {
+      winnerId = chor.id;
+      winnerName = chor.name;
+    }
   }
+
+  room.winnerId = winnerId;
+  room.winnerName = winnerName;
 
   const leaderboard = room.players
     .map((p) => ({ playerId: p.id, name: p.name, score: p.totalScore }))
     .sort((a, b) => b.score - a.score);
 
-  return {
-    ok: true,
-    events: [
-      { event: SocketEvents.PHASE_CHANGED, payload: { phase: "finished" } },
-      {
-        event: SocketEvents.GAME_OVER,
-        payload: {
-          winnerId: result.winnerId,
-          winnerName: result.winnerName,
-          leaderboard,
-          playerStatistics: playerStats,
-          roundHistory: room.roundHistory.map((r) => ({
-            roundNumber: r.roundNumber,
-            roles: r.roles,
-            mantriId: r.mantriId,
-            chosenId: r.chosenId,
-            isCorrect: r.isCorrect,
-            scores: r.scores,
-          })),
-        },
+  const events: EngineEvent[] = [
+    {
+      event: SocketEvents.GAME_OVER,
+      payload: {
+        winnerId,
+        winnerName,
+        leaderboard,
+        playerStatistics: {},
+        roundHistory: room.roundHistory.map((r) => ({
+          roundNumber: r.roundNumber,
+          roles: r.roles,
+          mantriId: r.mantriId,
+          chosenId: r.chosenId,
+          isCorrect: r.isCorrect,
+          scores: r.scores,
+        })),
       },
-    ],
-    targetedEvents: [],
-  };
+    },
+  ];
+
+  return { ok: true, events, targetedEvents: [] };
 }
 
 export function validateAction(
   room: Room,
   player: Player,
-  action: "start-round" | "reveal-card" | "hide-card" | "call-mantri" | "submit-guess" | "next-round",
-  _payload?: unknown
+  action: "start-round" | "select-police"
 ): EngineResult | null {
   switch (action) {
     case "start-round":
       return validateHost(room, player) ?? null;
-    case "reveal-card":
-    case "hide-card":
-      return validatePhase(room, "card-reveal");
-    case "call-mantri":
-      return validatePhase(room, "raja-calling");
-    case "submit-guess":
-      return validatePhase(room, "guessing");
-    case "next-round":
-      return validateHost(room, player) ?? validatePhase(room, "leaderboard");
+    case "select-police":
+      return validatePhase(room, "police-selection");
   }
 }

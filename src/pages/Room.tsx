@@ -9,8 +9,7 @@ import { SocketEvents } from "../../shared/socket/events";
 
 export function Room() {
   const navigate = useNavigate();
-  const { room, myPlayer, isHost, leaveRoom, toggleReady, startGame } =
-    useRoom();
+  const { room, myPlayer, isHost, leaveRoom, startGame } = useRoom();
   const status = useSocketStore((s) => s.status);
   const [copied, setCopied] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -37,10 +36,9 @@ export function Room() {
 
   if (!room) return null;
 
-  const allReady =
-    room.players.length === 4 &&
-    room.players.every((p) => p.isReady || p.isHost);
-  const canStart = room.players.length === 4 && allReady && isHost;
+  const minPlayers = 4;
+  const allConnected = room.players.length >= minPlayers && room.players.every((p) => p.isConnected);
+  const canStart = isHost && allConnected;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(room.code).then(() => {
@@ -61,8 +59,15 @@ export function Room() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md space-y-6"
       >
-        <div className="text-center">
-          <p className="text-text-muted text-sm mb-1">Room Code</p>
+        <div className="text-center space-y-1">
+          <p className="text-text-muted text-sm">
+            {room.players.length < minPlayers
+              ? `${room.players.length}/${minPlayers} Players Connected — Waiting for ${minPlayers - room.players.length} more player${minPlayers - room.players.length > 1 ? "s" : ""}...`
+              : allConnected
+              ? `${room.players.length}/${minPlayers} Players Connected — Ready to Start`
+              : `${room.players.length}/${minPlayers} Players Connected — Waiting for all players to connect...`}
+          </p>
+          <p className="text-text-muted text-sm">Room Code</p>
           <div className="flex items-center justify-center gap-3">
             <p className="text-4xl md:text-5xl font-bold tracking-[0.2em] gold-gradient text-glow">
               {room.code}
@@ -163,13 +168,6 @@ export function Room() {
                 {!player.isConnected && (
                   <span className="text-xs text-rose">Disconnected</span>
                 )}
-                <div
-                  className={`w-3 h-3 rounded-full ${
-                    player.isReady
-                      ? "bg-emerald shadow-sm shadow-emerald/50"
-                      : "bg-text-muted"
-                  }`}
-                />
               </div>
             </motion.div>
           ))}
@@ -193,20 +191,7 @@ export function Room() {
         </Card>
 
         <div className="space-y-3">
-          {!isHost && (
-            <motion.div whileTap={{ scale: 0.98 }}>
-              <Button
-                variant={myPlayer?.isReady ? "secondary" : "gold"}
-                size="lg"
-                fullWidth
-                onClick={toggleReady}
-              >
-                {myPlayer?.isReady ? "Not Ready" : "Ready"}
-              </Button>
-            </motion.div>
-          )}
-
-          {isHost && (
+          {isHost ? (
             <Button
               variant="gold"
               size="lg"
@@ -218,12 +203,16 @@ export function Room() {
                 ? "Starting..."
                 : canStart
                 ? "Start Game"
-                : room.players.length < 4
-                ? `Waiting for ${4 - room.players.length} more player${
-                    4 - room.players.length > 1 ? "s" : ""
+                : room.players.length < minPlayers
+                ? `Waiting for ${minPlayers - room.players.length} more player${
+                    minPlayers - room.players.length > 1 ? "s" : ""
                   }`
-                : "Waiting for all players to be ready"}
+                : "Waiting for all players to connect"}
             </Button>
+          ) : (
+            <p className="text-text-muted text-sm text-center">
+              Waiting for Host to start the game...
+            </p>
           )}
 
           <Button

@@ -18,7 +18,7 @@ export function nextRound(state: RoundState): RoundState {
   return {
     ...state,
     currentRound: state.currentRound + 1,
-    currentPhase: "shuffling",
+    currentPhase: "role-assignment",
   };
 }
 

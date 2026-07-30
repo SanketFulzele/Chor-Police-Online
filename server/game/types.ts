@@ -2,17 +2,11 @@ import type { GameRole } from "../shared/socket/types.js";
 
 export type GamePhase =
   | "waiting"
-  | "shuffling"
-  | "card-distribution"
-  | "card-reveal"
-  | "card-hidden"
-  | "waiting-raja"
-  | "raja-calling"
-  | "mantri-reveal"
-  | "guessing"
-  | "reveal-roles"
-  | "score-update"
-  | "leaderboard"
+  | "role-assignment"
+  | "reveal-raja"
+  | "reveal-mantri"
+  | "police-selection"
+  | "reveal-result"
   | "finished";
 
 export interface PhaseTransition {
