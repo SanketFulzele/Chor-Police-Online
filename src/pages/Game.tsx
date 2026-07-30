@@ -43,6 +43,7 @@ export function GamePage() {
 
   const isHost = room?.hostId === playerId;
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<{ rect: DOMRect; role: GameRole; round: number } | null>(null);
 
   useEffect(() => {
     if (!room) {
@@ -556,40 +557,39 @@ export function GamePage() {
                 <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
                   <span className="text-xl">📊</span> Match History
                 </h3>
-                <div className="overflow-x-auto">
-                  <div className="overflow-y-auto rounded-lg border border-white/[0.06]" style={{ maxHeight: "45vh" }}>
-                    <table className="w-full text-sm border-collapse">
+                <div className="rounded-xl border border-white/[0.06] overflow-hidden shadow-lg bg-[#12122a]/50">
+                  <div className="overflow-y-auto" style={{ maxHeight: "45vh" }}>
+                    <table className="w-full text-sm table-fixed border-collapse">
                       <thead>
-                        <tr className="bg-[#1e1e3a]">
-                          <th className="sticky left-0 z-20 py-3 pr-4 text-left text-text-muted font-semibold min-w-[80px] bg-[#1e1e3a]">Game</th>
+                        <tr className="bg-[#1a1a3e]/95">
+                          <th className="sticky top-0 z-20 w-20 py-3 pl-4 pr-2 text-left text-text-muted font-semibold text-[11px] uppercase tracking-wider bg-[#1a1a3e]/95 backdrop-blur-sm">Game</th>
                           {sortedFinished.map((p) => (
-                            <th key={p.id} className="py-3 px-4 text-right text-text-muted font-semibold whitespace-nowrap min-w-[100px] bg-[#1e1e3a]">
-                              {p.name}
-                              {p.id === playerId && <span className="text-text-muted text-xs ml-1 font-normal">(You)</span>}
+                            <th key={p.id} className="sticky top-0 z-20 py-3 px-2 text-right text-text-muted font-semibold text-[11px] uppercase tracking-wider truncate bg-[#1a1a3e]/95 backdrop-blur-sm">
+                              <span className="inline-block max-w-full truncate align-middle">{p.name}</span>
+                              {p.id === playerId && <span className="text-text-muted text-[10px] ml-1 font-normal">(You)</span>}
                             </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {finishedRoundNumbers.map((rn, i) => (
-                          <tr key={rn} className={`${i % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]"} hover:bg-white/[0.08] transition-colors`}>
-                            <td className="sticky left-0 z-10 py-3 pr-4 text-text-muted font-medium whitespace-nowrap bg-inherit">Game {rn}</td>
+                          <tr key={rn} className={`${i % 2 === 0 ? "bg-white/[0.015]" : "bg-white/[0.04]"} hover:bg-white/[0.07] transition-colors duration-150`}>
+                            <td className="sticky left-0 z-10 w-20 py-2.5 pl-4 pr-2 text-text-muted text-xs font-medium whitespace-nowrap bg-inherit">Game {rn}</td>
                             {sortedFinished.map((p) => {
                               const score = fScore(p.id, rn);
                               const role = fRole(p.id, rn);
                               return (
-                                <td key={p.id} className="py-3 px-4 text-right font-mono relative group">
-                                  <span className={score > 0 ? "text-emerald-400 font-medium" : "text-gray-500"}>{score}</span>
-                                  {role && (
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-20">
-                                      <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg border border-white/10">
-                                        <div className="text-center text-text-muted text-[10px] mb-0.5">Game {rn}</div>
-                                        <div className="flex items-center gap-1.5">
-                                          <span>{ROLE_EMOJIS[role]} {ROLE_LABELS[role]}</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
+                                <td
+                                  key={p.id}
+                                  className="py-2.5 px-2 text-right font-mono text-sm relative cursor-default"
+                                  onMouseEnter={(e) => {
+                                    if (!role) return;
+                                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                    setHoveredCell({ rect, role, round: rn });
+                                  }}
+                                  onMouseLeave={() => setHoveredCell(null)}
+                                >
+                                  <span className={`${score > 0 ? "text-emerald-400 font-medium" : "text-white/30"} transition-colors duration-150`}>{score}</span>
                                 </td>
                               );
                             })}
@@ -597,10 +597,10 @@ export function GamePage() {
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="bg-[#1e1e3a] border-t border-white/10 sticky bottom-0 z-20">
-                          <td className="sticky left-0 z-30 py-3.5 pr-4 font-bold text-gold whitespace-nowrap bg-[#1e1e3a]">TOTAL</td>
+                        <tr className="bg-[#1a1a3e]/95 border-t border-white/[0.08] sticky bottom-0 z-20 backdrop-blur-sm">
+                          <td className="sticky left-0 z-30 w-20 py-3 pl-4 pr-2 font-bold text-gold text-xs uppercase tracking-wider bg-[#1a1a3e]/95 backdrop-blur-sm">Total</td>
                           {sortedFinished.map((p) => (
-                            <td key={p.id} className="py-3.5 px-4 text-right font-bold font-mono text-gold bg-[#1e1e3a]">{p.total}</td>
+                            <td key={p.id} className="py-3 px-2 text-right font-bold font-mono text-sm text-gold bg-[#1a1a3e]/95 backdrop-blur-sm">{p.total}</td>
                           ))}
                         </tr>
                       </tfoot>
@@ -650,6 +650,24 @@ export function GamePage() {
               </div>
             </div>
 
+            {/* Fixed tooltip for finished phase (not clipped by overflow) */}
+            {hoveredCell && (
+              <div
+                className="fixed z-[100] pointer-events-none"
+                style={{
+                  left: hoveredCell.rect.left + hoveredCell.rect.width / 2,
+                  top: hoveredCell.rect.top - 10,
+                  transform: "translate(-50%, -100%)",
+                }}
+              >
+                <div className="bg-gray-900/95 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl border border-white/[0.12] backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150">
+                  <div className="text-center text-text-muted text-[10px] mb-0.5 tracking-wide">Game {hoveredCell.round}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span>{ROLE_EMOJIS[hoveredCell.role]} {ROLE_LABELS[hoveredCell.role]}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           );
         })()}
@@ -691,6 +709,7 @@ function placeLabel(i: number): string {
 function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTableProps) {
   const rows = toRows(roundHistory);
   const roundNumbers = [...new Set(rows.map((r) => r.n))].sort((a, b) => a - b);
+  const [hoveredCell, setHoveredCell] = useState<{ rect: DOMRect; role: GameRole; round: number } | null>(null);
 
   const sorted = [...players]
     .map((p) => ({
@@ -715,7 +734,6 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
 
   return (
     <div className="space-y-6">
-      {/* Hero Rankings */}
       <div className="text-left">
         <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
           <span className="text-xl">🏆</span> Current Rankings
@@ -728,23 +746,22 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
         />
       </div>
 
-      {/* Score History Table */}
       <div className="text-left">
         <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
           <span className="text-xl">📊</span> Score History
         </h3>
-        <div className="overflow-x-auto -mx-4 px-4">
-          <div className="overflow-y-auto rounded-lg border border-white/[0.06]" style={{ maxHeight: "55vh" }}>
-            <table className="w-full text-sm border-collapse">
+        <div className="rounded-xl border border-white/[0.06] overflow-hidden shadow-lg bg-[#12122a]/50">
+          <div className="overflow-y-auto" style={{ maxHeight: "55vh" }}>
+            <table className="w-full text-sm table-fixed border-collapse">
               <thead>
-                <tr className="bg-[#1e1e3a]">
-                  <th className="sticky left-0 z-20 py-3 pr-4 text-left text-text-muted font-semibold min-w-[80px] bg-[#1e1e3a]">
+                <tr className="bg-[#1a1a3e]/95">
+                  <th className="sticky top-0 z-20 w-20 py-3 pl-4 pr-2 text-left text-text-muted font-semibold text-[11px] uppercase tracking-wider bg-[#1a1a3e]/95 backdrop-blur-sm">
                     Game
                   </th>
                   {sorted.map((p) => (
-                    <th key={p.id} className="py-3 px-4 text-right text-text-muted font-semibold whitespace-nowrap min-w-[100px] bg-[#1e1e3a]">
-                      {p.name}
-                      {p.id === playerId && <span className="text-text-muted text-xs ml-1 font-normal">(You)</span>}
+                    <th key={p.id} className="sticky top-0 z-20 py-3 px-2 text-right text-text-muted font-semibold text-[11px] uppercase tracking-wider truncate bg-[#1a1a3e]/95 backdrop-blur-sm">
+                      <span className="inline-block max-w-full truncate align-middle">{p.name}</span>
+                      {p.id === playerId && <span className="text-text-muted text-[10px] ml-1 font-normal">(You)</span>}
                     </th>
                   ))}
                 </tr>
@@ -753,27 +770,26 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
                 {roundNumbers.map((rn, i) => (
                   <tr
                     key={rn}
-                    className={`${i % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]"} hover:bg-white/[0.08] transition-colors`}
+                    className={`${i % 2 === 0 ? "bg-white/[0.015]" : "bg-white/[0.04]"} hover:bg-white/[0.07] transition-colors duration-150`}
                   >
-                    <td className="sticky left-0 z-10 py-3 pr-4 text-text-muted font-medium whitespace-nowrap bg-inherit">
+                    <td className="sticky left-0 z-10 w-20 py-2.5 pl-4 pr-2 text-text-muted text-xs font-medium whitespace-nowrap bg-inherit">
                       Game {rn}
                     </td>
                     {sorted.map((p) => {
                       const score = getScore(p.id, rn);
                       const role = getRole(p.id, rn);
                       return (
-                        <td key={p.id} className="py-3 px-4 text-right font-mono relative group">
-                          <span className={score > 0 ? "text-emerald-400 font-medium" : "text-gray-500"}>{score}</span>
-                          {role && (
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-20">
-                              <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg border border-white/10">
-                                <div className="text-center text-text-muted text-[10px] mb-0.5">Game {rn}</div>
-                                <div className="flex items-center gap-1.5">
-                                  <span>{ROLE_EMOJIS[role]} {ROLE_LABELS[role]}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                        <td
+                          key={p.id}
+                          className="py-2.5 px-2 text-right font-mono text-sm relative cursor-default"
+                          onMouseEnter={(e) => {
+                            if (!role) return;
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            setHoveredCell({ rect, role, round: rn });
+                          }}
+                          onMouseLeave={() => setHoveredCell(null)}
+                        >
+                          <span className={`${score > 0 ? "text-emerald-400 font-medium" : "text-white/30"} transition-colors duration-150`}>{score}</span>
                         </td>
                       );
                     })}
@@ -781,12 +797,12 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-[#1e1e3a] border-t border-white/10 sticky bottom-0 z-20">
-                  <td className="sticky left-0 z-30 py-3.5 pr-4 font-bold text-gold whitespace-nowrap bg-[#1e1e3a]">
-                    TOTAL
+                <tr className="bg-[#1a1a3e]/95 border-t border-white/[0.08] sticky bottom-0 z-20 backdrop-blur-sm">
+                  <td className="sticky left-0 z-30 w-20 py-3 pl-4 pr-2 font-bold text-gold text-xs uppercase tracking-wider bg-[#1a1a3e]/95 backdrop-blur-sm">
+                    Total
                   </td>
                   {sorted.map((p) => (
-                    <td key={p.id} className="py-3.5 px-4 text-right font-bold font-mono text-gold bg-[#1e1e3a]">
+                    <td key={p.id} className="py-3 px-2 text-right font-bold font-mono text-sm text-gold bg-[#1a1a3e]/95 backdrop-blur-sm">
                       {p.total}
                     </td>
                   ))}
@@ -796,6 +812,25 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
           </div>
         </div>
       </div>
+
+      {/* Fixed tooltip (not clipped by overflow) */}
+      {hoveredCell && (
+        <div
+          className="fixed z-[100] pointer-events-none"
+          style={{
+            left: hoveredCell.rect.left + hoveredCell.rect.width / 2,
+            top: hoveredCell.rect.top - 10,
+            transform: "translate(-50%, -100%)",
+          }}
+        >
+          <div className="bg-gray-900/95 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl border border-white/[0.12] backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150">
+            <div className="text-center text-text-muted text-[10px] mb-0.5 tracking-wide">Game {hoveredCell.round}</div>
+            <div className="flex items-center gap-1.5">
+              <span>{ROLE_EMOJIS[hoveredCell.role]} {ROLE_LABELS[hoveredCell.role]}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
