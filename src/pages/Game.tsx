@@ -27,7 +27,6 @@ export function GamePage() {
   const lastRoundResult = useGameStore((s) => s.lastRoundResult);
   const currentScores = useGameStore((s) => s.currentScores);
   const currentTotals = useGameStore((s) => s.currentTotals);
-  const leaderboard = useGameStore((s) => s.leaderboard);
   const winnerId = useGameStore((s) => s.winnerId);
   const winnerName = useGameStore((s) => s.winnerName);
   const playerStatistics = useGameStore((s) => s.playerStatistics);
@@ -274,12 +273,15 @@ export function GamePage() {
                 </Button>
               </>
             ) : (
-              <>
-                <p className="text-4xl mb-2">🤔</p>
-                <p className="text-text-secondary">
-                  The Mantri is trying to identify the Chor...
+              <div className="text-center space-y-2">
+                <p className="text-5xl mb-2">{ROLE_EMOJIS.mantri}</p>
+                <p className="text-text-secondary font-medium">
+                  Mantri is identifying the Chor...
                 </p>
-              </>
+                <p className="text-text-muted text-sm">
+                  Please wait while the Mantri makes a decision.
+                </p>
+              </div>
             )}
           </Card>
         )}
@@ -443,30 +445,13 @@ export function GamePage() {
         {/* Phase: leaderboard */}
         {(phase === "leaderboard") && (
           <Card>
-            <div className="space-y-3">
-              {(leaderboard.length > 0 ? leaderboard : room.players
-                .map((p) => ({ playerId: p.id, name: p.name, score: p.totalScore }))
-                .sort((a, b) => b.score - a.score)
-              ).map((entry, i) => (
-                <motion.div
-                  key={entry.playerId}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="flex items-center gap-3 glass rounded-xl px-4 py-3"
-                >
-                  <span className="text-lg w-8 text-center">
-                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
-                  </span>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium">
-                      {entry.name}
-                      {entry.playerId === playerId && <span className="text-text-muted text-xs ml-1">(You)</span>}
-                    </p>
-                  </div>
-                  <span className="text-lg font-bold font-mono">{entry.score}</span>
-                </motion.div>
-              ))}
+            <div className="space-y-4">
+              <ScoreTable
+                players={room.players}
+                roundHistory={room.roundHistory}
+                currentTotals={currentTotals ?? {}}
+                playerId={playerId}
+              />
 
               {isHost && (
                 <div className="flex gap-3 mt-6">
@@ -513,37 +498,15 @@ export function GamePage() {
               </motion.div>
             </Card>
 
-            {/* Podium */}
+            {/* Final standings table */}
             <Card>
               <p className="text-lg font-semibold mb-4">Final Standings</p>
-              <div className="space-y-3">
-                {leaderboard.map((entry, i) => (
-                  <motion.div
-                    key={entry.playerId}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.15 }}
-                    className="flex items-center gap-3 glass rounded-xl px-4 py-3"
-                  >
-                    <span className="text-2xl w-10 text-center">
-                      {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
-                    </span>
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
-                      style={{ backgroundColor: room.players.find((p) => p.id === entry.playerId)?.avatarColor ?? "#7c3aed" }}
-                    >
-                      {entry.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-medium">
-                        {entry.name}
-                        {entry.playerId === playerId && <span className="text-text-muted text-xs ml-1">(You)</span>}
-                      </p>
-                    </div>
-                    <span className="text-lg font-bold font-mono">{entry.score}</span>
-                  </motion.div>
-                ))}
-              </div>
+              <ScoreTable
+                players={room.players}
+                roundHistory={roundHistory.length > 0 ? roundHistory : room.roundHistory}
+                currentTotals={currentTotals ?? {}}
+                playerId={playerId}
+              />
             </Card>
 
             {/* Statistics */}
@@ -596,6 +559,115 @@ export function GamePage() {
           </Button>
         )}
       </motion.div>
+    </div>
+  );
+}
+
+interface RoundRow {
+  n: number;
+  scores: Record<string, number>;
+  roles: Record<string, GameRole>;
+}
+
+interface ScoreTableProps {
+  players: { id: string; name: string; avatarColor: string }[];
+  roundHistory: { roundNumber?: number; round?: number; scores: Record<string, number>; roles: Record<string, GameRole> }[];
+  currentTotals: Record<string, number>;
+  playerId: string;
+}
+
+function toRows(rh: ScoreTableProps["roundHistory"]): RoundRow[] {
+  return rh.map((r) => ({ n: r.roundNumber ?? r.round ?? 0, scores: r.scores, roles: r.roles }));
+}
+
+function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTableProps) {
+  const rows = toRows(roundHistory);
+  const roundNumbers = [...new Set(rows.map((r) => r.n))].sort((a, b) => a - b);
+
+  const sorted = [...players]
+    .map((p) => ({
+      ...p,
+      total: currentTotals[p.id] ?? rows.reduce((sum, r) => sum + (r.scores[p.id] ?? 0), 0),
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  const getScore = (playerId: string, n: number) => {
+    const rh = rows.find((r) => r.n === n);
+    return rh?.scores[playerId] ?? 0;
+  };
+
+  const getRole = (playerId: string, n: number): GameRole | undefined => {
+    const rh = rows.find((r) => r.n === n);
+    return rh?.roles[playerId];
+  };
+
+  if (roundNumbers.length === 0) {
+    return <p className="text-text-muted text-sm">No rounds completed yet.</p>;
+  }
+
+  return (
+    <div className="overflow-x-auto -mx-4 px-4">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-white/10">
+            <th className="py-2 pr-2 text-left text-text-muted font-medium w-8">#</th>
+            <th className="py-2 pr-3 text-left text-text-muted font-medium whitespace-nowrap">Player</th>
+            {roundNumbers.map((rn) => (
+              <th key={rn} className="py-2 px-2 text-right text-text-muted font-medium whitespace-nowrap min-w-[64px]">
+                R{rn}
+              </th>
+            ))}
+            <th className="py-2 pl-3 text-right text-text-muted font-medium whitespace-nowrap min-w-[64px]">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((p, i) => (
+            <tr key={p.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+              <td className="py-2.5 pr-2 text-center text-lg">
+                {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
+              </td>
+              <td className="py-2.5 pr-3">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                    style={{ backgroundColor: p.avatarColor }}
+                  >
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="font-medium truncate max-w-[80px] sm:max-w-[120px]">
+                    {p.name}
+                    {p.id === playerId && <span className="text-text-muted text-xs ml-1">(You)</span>}
+                  </span>
+                </div>
+              </td>
+              {roundNumbers.map((rn) => {
+                const score = getScore(p.id, rn);
+                const role = getRole(p.id, rn);
+                return (
+                  <td key={rn} className="py-2.5 px-2 text-right font-mono text-sm relative group">
+                    <span className={score > 0 ? "text-emerald" : "text-text-muted"}>
+                      {score}
+                    </span>
+                    {role && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-10">
+                        <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg border border-white/10">
+                          <div className="flex items-center gap-1.5">
+                            <span>{ROLE_EMOJIS[role]}</span>
+                            <span>{ROLE_LABELS[role]}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                );
+              })}
+              <td className="py-2.5 pl-3 text-right font-bold font-mono text-gold">
+                {p.total}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
