@@ -43,6 +43,9 @@ function broadcastRoom(roomCode: string) {
   io.to(roomCode).emit(SocketEvents.ROOM_UPDATED, { room });
 }
 
+const GRACE_PERIOD_MS = 30_000;
+const disconnectTimers = new Map<string, NodeJS.Timeout>();
+
 io.on("connection", (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
@@ -125,6 +128,13 @@ io.on("connection", (socket) => {
       return;
     }
 
+    const key = `${roomCode}:${playerId}`;
+    const existing = disconnectTimers.get(key);
+    if (existing) {
+      clearTimeout(existing);
+      disconnectTimers.delete(key);
+    }
+
     console.log(`[event] RECONNECT socket=${socket.id} room=${roomCode} player=${player.name}`);
     updatePlayerSocket(room.code, player.id, socket.id);
     socket.join(room.code);
@@ -163,15 +173,21 @@ io.on("connection", (socket) => {
 
     const { room, player } = ctx;
     console.log(`[event] disconnecting socket=${socket.id} player=${player.name} room=${room.code}`);
-    const updatedRoom = setPlayerDisconnected(room.code, player.id);
 
-    if (updatedRoom) {
-      io.to(room.code).emit(SocketEvents.PLAYER_DISCONNECTED, { playerId: player.id });
-      if (player.isHost) {
-        io.to(room.code).emit(SocketEvents.HOST_CHANGED, { newHostId: updatedRoom.hostId });
+    const wasHost = player.isHost;
+    const key = `${room.code}:${player.id}`;
+    const timer = setTimeout(() => {
+      disconnectTimers.delete(key);
+      const updatedRoom = setPlayerDisconnected(room.code, player.id);
+      if (updatedRoom) {
+        io.to(room.code).emit(SocketEvents.PLAYER_DISCONNECTED, { playerId: player.id });
+        if (wasHost) {
+          io.to(room.code).emit(SocketEvents.HOST_CHANGED, { newHostId: updatedRoom.hostId });
+        }
+        broadcastRoom(room.code);
       }
-      broadcastRoom(room.code);
-    }
+    }, GRACE_PERIOD_MS);
+    disconnectTimers.set(key, timer);
   });
 
   socket.on("disconnect", () => {

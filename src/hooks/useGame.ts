@@ -177,6 +177,7 @@ export function useGame() {
   const revealCard = () => {
     socket?.emit(SocketEvents.REVEAL_CARD);
     setHasRevealed(true);
+    setHasHidden(false);
   };
 
   const hideCard = () => {

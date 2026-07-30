@@ -5,6 +5,7 @@ import { useRoomStore } from "../store/roomStore";
 import { useGameStore } from "../store/gameStore";
 import { SocketEvents } from "../../shared/socket/events";
 import type { Room, GameRole } from "../types";
+import { loadSession, clearSession } from "../utils/session";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -16,6 +17,43 @@ if (!SERVER_URL) {
 }
 
 let socketCreated = false;
+
+function reconstructGameState(room: Room, myRole?: GameRole) {
+  const gameStore = useGameStore.getState();
+
+  gameStore.setPhase(room.phase);
+  gameStore.setRound(room.round);
+  if (myRole) gameStore.setMyRole(myRole);
+  if (room.mantriId) gameStore.setMantriId(room.mantriId);
+
+  const scores: Record<string, number> = {};
+  const totals: Record<string, number> = {};
+  for (const p of room.players) {
+    scores[p.id] = p.currentScore;
+    totals[p.id] = p.totalScore;
+    if (p.hasRevealed) gameStore.addRevealedPlayer(p.id);
+    if (p.hasHidden) gameStore.addHiddenPlayer(p.id);
+  }
+  gameStore.setCurrentScores(scores);
+  gameStore.setCurrentTotals(totals);
+
+  if (room.phase === "finished" && room.winnerId) {
+    const lb = room.players
+      .map((p) => ({ playerId: p.id, name: p.name, score: p.totalScore }))
+      .sort((a, b) => b.score - a.score);
+    const stats: Record<string, unknown> = {};
+    for (const p of room.players) {
+      stats[p.id] = p.statistics;
+    }
+    gameStore.setGameOver({
+      winnerId: room.winnerId,
+      winnerName: room.winnerName ?? "",
+      leaderboard: lb,
+      playerStatistics: stats,
+      roundHistory: room.roundHistory ?? [],
+    });
+  }
+}
 
 export function useSocket() {
   const socket = useSocketStore((s) => s.socket);
@@ -47,6 +85,17 @@ export function useSocket() {
           roomCode: room.code,
           playerId,
         });
+        return;
+      }
+
+      const session = loadSession();
+      if (session) {
+        console.log(`[socket] session found, emitting RECONNECT room=${session.roomCode} playerId=${session.playerId}`);
+        useRoomStore.getState().setPlayerId(session.playerId);
+        newSocket.emit(SocketEvents.RECONNECT, {
+          roomCode: session.roomCode,
+          playerId: session.playerId,
+        });
       }
     });
 
@@ -67,6 +116,7 @@ export function useSocket() {
 
     newSocket.on(SocketEvents.ROOM_DESTROYED, () => {
       console.log(`[socket] ROOM_DESTROYED`);
+      clearSession();
       useRoomStore.getState().reset();
     });
 
@@ -78,12 +128,11 @@ export function useSocket() {
       }
     });
 
-    newSocket.on(SocketEvents.RECONNECT_STATE, ({ room, myRole }: { room: Room; myRole?: GameRole }) => {
+    newSocket.on(SocketEvents.RECONNECT_STATE, ({ room, playerId, myRole }: { room: Room; playerId: string; myRole?: GameRole }) => {
       console.log(`[socket] RECONNECT_STATE room=${room.code} players=${room.players.length} myRole=${myRole}`);
       useRoomStore.getState().setRoom(room);
-      if (myRole) {
-        useGameStore.getState().setMyRole(myRole);
-      }
+      useRoomStore.getState().setPlayerId(playerId);
+      reconstructGameState(room, myRole);
     });
 
     setSocket(newSocket);

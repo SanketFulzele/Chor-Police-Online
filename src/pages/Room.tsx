@@ -2,10 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useSocketStore } from "../store/socketStore";
+import { useRoomStore } from "../store/roomStore";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { useRoom } from "../hooks/useRoom";
 import { SocketEvents } from "../../shared/socket/events";
+import { loadSession, clearSession } from "../utils/session";
 
 export function Room() {
   const navigate = useNavigate();
@@ -17,7 +19,18 @@ export function Room() {
 
   useEffect(() => {
     if (!room && status === "connected") {
-      navigate("/");
+      const session = loadSession();
+      if (session) {
+        const timer = setTimeout(() => {
+          if (!useRoomStore.getState().room) {
+            clearSession();
+            navigate("/");
+          }
+        }, 5000);
+        return () => clearTimeout(timer);
+      } else {
+        navigate("/");
+      }
     }
   }, [room, status, navigate]);
 

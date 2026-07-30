@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useSocketStore } from "../store/socketStore";
 import { useRoomStore } from "../store/roomStore";
 import { SocketEvents } from "../../shared/socket/events";
+import { clearSession } from "../utils/session";
 
 export function useRoom() {
   const socket = useSocketStore((s) => s.socket);
@@ -48,6 +49,7 @@ export function useRoom() {
   const leaveRoom = useCallback(() => {
     if (!socket) return;
     socket.emit(SocketEvents.LEAVE_ROOM);
+    clearSession();
     reset();
   }, [socket, reset]);
 

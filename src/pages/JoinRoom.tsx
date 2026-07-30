@@ -8,6 +8,7 @@ import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { SocketEvents } from "../../shared/socket/events";
+import { saveSession } from "../utils/session";
 
 interface JoinRoomForm {
   name: string;
@@ -46,6 +47,7 @@ export function JoinRoom() {
     socket.once(SocketEvents.ROOM_JOINED, ({ room, playerId }) => {
       setPlayerId(playerId);
       setRoom(room);
+      saveSession({ roomCode: room.code, playerId, playerName: data.name, isHost: false });
       setLoading(false);
       navigate(`/room?code=${room.code}`);
     });

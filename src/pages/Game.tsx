@@ -10,6 +10,7 @@ import { GameCard } from "../components/game/Card";
 import { ShuffleAnimation } from "../components/game/ShuffleAnimation";
 import { ROLE_EMOJIS, ROLE_LABELS, ROLE_COLORS } from "../constants/game";
 import { usePersistence } from "../hooks/usePersistence";
+import { loadSession, clearSession } from "../utils/session";
 
 export function GamePage() {
   const navigate = useNavigate();
@@ -44,7 +45,18 @@ export function GamePage() {
 
   useEffect(() => {
     if (!room) {
-      navigate("/");
+      const session = loadSession();
+      if (session) {
+        const timer = setTimeout(() => {
+          if (!useRoomStore.getState().room) {
+            clearSession();
+            navigate("/");
+          }
+        }, 5000);
+        return () => clearTimeout(timer);
+      } else {
+        navigate("/");
+      }
     }
   }, [room, navigate]);
 
@@ -82,7 +94,16 @@ export function GamePage() {
     }
   }, [showResult]);
 
-  if (!room) return null;
+  if (!room) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-gold/30 border-t-gold rounded-full animate-spin mx-auto" />
+          <p className="text-text-muted">Reconnecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   const mantri = mantriId ? room.players.find((p) => p.id === mantriId) : null;
   const rajaRevealed = room.players.some((p) => p.publicRole === "raja");
@@ -98,14 +119,14 @@ export function GamePage() {
     }
   };
 
-  const isGameplayPhase = phase && !["waiting", "shuffling", "card-distribution", "leaderboard", null].includes(phase);
+  const isGameplayPhase = phase && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="w-full max-w-lg space-y-6 text-center"
+        className={`w-full space-y-6 text-center ${phase === "leaderboard" || phase === "finished" ? "max-w-5xl" : "max-w-lg"}`}
       >
         <div className="space-y-1">
           <h2 className="text-2xl font-bold gold-gradient">
@@ -436,17 +457,19 @@ export function GamePage() {
 
         {/* Phase: leaderboard */}
         {(phase === "leaderboard") && (
-          <Card>
-            <div className="space-y-4">
+          <div className="flex flex-col" style={{ maxHeight: "calc(100vh - 12rem)" }}>
+            <div className="flex-1 overflow-y-auto space-y-5 pr-1">
               <ScoreTable
                 players={room.players}
                 roundHistory={room.roundHistory}
                 currentTotals={currentTotals ?? {}}
                 playerId={playerId}
               />
+            </div>
 
+            <div className="flex-shrink-0 pt-4">
               {isHost && (
-                <div className="flex gap-3 mt-6">
+                <div className="flex gap-3">
                   <Button className="flex-1" onClick={nextRound}>
                     Next Round
                   </Button>
@@ -457,93 +480,177 @@ export function GamePage() {
               )}
 
               {!isHost && (
-                <p className="text-text-muted text-sm mt-4">
+                <p className="text-text-muted text-sm text-center">
                   Waiting for host...
                 </p>
               )}
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Phase: finished */}
-        {phase === "finished" && winnerId && (
-          <div className="space-y-6">
-            <Card>
+        {phase === "finished" && winnerId && (() => {
+          const finishedRows = toRows(roundHistory.length > 0 ? roundHistory : room.roundHistory);
+          const finishedRoundNumbers = [...new Set(finishedRows.map((r) => r.n))].sort((a, b) => a - b);
+          const finishedTotals: Record<string, number> = {};
+          room.players.forEach((p) => {
+            finishedTotals[p.id] = currentTotals?.[p.id] ?? finishedRows.reduce((s, r) => s + (r.scores[p.id] ?? 0), 0);
+          });
+          const sortedFinished = [...room.players].map((p) => ({ ...p, total: finishedTotals[p.id] ?? 0 })).sort((a, b) => b.total - a.total);
+          const fScore = (pid: string, n: number) => finishedRows.find((r) => r.n === n)?.scores[pid] ?? 0;
+          const fRole = (pid: string, n: number) => finishedRows.find((r) => r.n === n)?.roles[pid];
+
+          return (
+          <div className="space-y-8" style={{ maxHeight: "calc(100vh - 10rem)" }}>
+            <div className="overflow-y-auto space-y-8 pr-1">
+              {/* Hero winner section */}
               <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
+                initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.6 }}
-                className="space-y-4"
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="text-center space-y-5 py-4"
               >
-                <p className="text-6xl">🏆</p>
-                <p className="text-3xl font-bold gold-gradient">Game Over</p>
-                <div
-                  className="w-24 h-24 rounded-full flex items-center justify-center text-4xl font-bold mx-auto border-4 border-gold"
-                  style={{
-                    backgroundColor: room.players.find((p) => p.id === winnerId)?.avatarColor ?? "#7c3aed",
-                  }}
+                <motion.span
+                  initial={{ scale: 0, rotate: -15 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
+                  className="inline-block text-7xl"
                 >
-                  {winnerName?.charAt(0).toUpperCase() ?? "?"}
+                  🏆
+                </motion.span>
+                <p className="text-4xl font-black tracking-wide gold-gradient">GAME OVER</p>
+                <div className="flex justify-center">
+                  <div className="relative">
+                    <div
+                      className="w-28 h-28 rounded-full flex items-center justify-center text-5xl font-bold border-[3px] border-gold shadow-[0_0_30px_rgba(234,179,8,0.25)]"
+                      style={{
+                        backgroundColor: room.players.find((p) => p.id === winnerId)?.avatarColor ?? "#7c3aed",
+                      }}
+                    >
+                      {winnerName?.charAt(0).toUpperCase() ?? "?"}
+                    </div>
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gold text-black text-xs font-bold px-3 py-0.5 rounded-full whitespace-nowrap">
+                      🏆 Champion
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xl font-semibold text-gold">{winnerName}</p>
-                <p className="text-text-muted text-sm">is the Champion!</p>
+                <p className="text-2xl font-bold text-gold">{winnerName}</p>
               </motion.div>
-            </Card>
 
-            {/* Final standings table */}
-            <Card>
-              <p className="text-lg font-semibold mb-4">Final Standings</p>
-              <ScoreTable
-                players={room.players}
-                roundHistory={roundHistory.length > 0 ? roundHistory : room.roundHistory}
-                currentTotals={currentTotals ?? {}}
-                playerId={playerId}
-              />
-            </Card>
+              {/* Final Standings — ranking cards */}
+              <div className="text-left">
+                <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
+                  <span className="text-xl">🏅</span> Final Standings
+                </h3>
+                <RankingCards
+                  players={room.players}
+                  roundHistory={roundHistory.length > 0 ? roundHistory : room.roundHistory}
+                  currentTotals={currentTotals ?? {}}
+                  playerId={playerId}
+                />
+              </div>
 
-            {/* Statistics */}
-            {playerStatistics && Object.keys(playerStatistics).length > 0 && (
-              <Card>
-                <p className="text-lg font-semibold mb-4">Player Statistics</p>
-                <div className="space-y-3">
-                  {room.players.map((p) => {
-                    const stats = playerStatistics[p.id] as Record<string, number | string> | undefined;
-                    if (!stats) return null;
-                    return (
-                      <motion.div
-                        key={p.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="glass rounded-xl px-4 py-3 text-left"
-                      >
-                        <p className="font-medium text-sm mb-2">
-                          {p.name} {p.id === playerId && <span className="text-text-muted text-xs">(You)</span>}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-text-muted">
-                          <span>👑 Raja: {String(stats.timesRaja ?? 0)}x</span>
-                          <span>👮 Mantri: {String(stats.timesMantri ?? 0)}x</span>
-                          <span>🥷 Chor: {String(stats.timesChor ?? 0)}x</span>
-                          <span>🔫 Daku: {String(stats.timesDaku ?? 0)}x</span>
-                          <span>✓ Correct: {String(stats.correctGuesses ?? 0)}</span>
-                          <span>✗ Wrong: {String(stats.wrongGuesses ?? 0)}</span>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+              {/* Match History — score table */}
+              <div className="text-left">
+                <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
+                  <span className="text-xl">📊</span> Match History
+                </h3>
+                <div className="overflow-x-auto">
+                  <div className="overflow-y-auto rounded-lg border border-white/[0.06]" style={{ maxHeight: "45vh" }}>
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-[#1e1e3a]">
+                          <th className="sticky left-0 z-20 py-3 pr-4 text-left text-text-muted font-semibold min-w-[80px] bg-[#1e1e3a]">Game</th>
+                          {sortedFinished.map((p) => (
+                            <th key={p.id} className="py-3 px-4 text-right text-text-muted font-semibold whitespace-nowrap min-w-[100px] bg-[#1e1e3a]">
+                              {p.name}
+                              {p.id === playerId && <span className="text-text-muted text-xs ml-1 font-normal">(You)</span>}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {finishedRoundNumbers.map((rn, i) => (
+                          <tr key={rn} className={`${i % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]"} hover:bg-white/[0.08] transition-colors`}>
+                            <td className="sticky left-0 z-10 py-3 pr-4 text-text-muted font-medium whitespace-nowrap bg-inherit">Game {rn}</td>
+                            {sortedFinished.map((p) => {
+                              const score = fScore(p.id, rn);
+                              const role = fRole(p.id, rn);
+                              return (
+                                <td key={p.id} className="py-3 px-4 text-right font-mono relative group">
+                                  <span className={score > 0 ? "text-emerald-400 font-medium" : "text-gray-500"}>{score}</span>
+                                  {role && (
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-20">
+                                      <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg border border-white/10">
+                                        <div className="text-center text-text-muted text-[10px] mb-0.5">Game {rn}</div>
+                                        <div className="flex items-center gap-1.5">
+                                          <span>{ROLE_EMOJIS[role]} {ROLE_LABELS[role]}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-[#1e1e3a] border-t border-white/10 sticky bottom-0 z-20">
+                          <td className="sticky left-0 z-30 py-3.5 pr-4 font-bold text-gold whitespace-nowrap bg-[#1e1e3a]">TOTAL</td>
+                          {sortedFinished.map((p) => (
+                            <td key={p.id} className="py-3.5 px-4 text-right font-bold font-mono text-gold bg-[#1e1e3a]">{p.total}</td>
+                          ))}
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
-              </Card>
-            )}
+              </div>
 
-            <div className="flex gap-3 justify-center">
-              <Button onClick={() => navigate("/")}>
-                Back to Home
-              </Button>
-              <Button variant="ghost" onClick={() => navigate("/history")}>
-                Game History
-              </Button>
+              {/* Player Statistics */}
+              {playerStatistics && Object.keys(playerStatistics).length > 0 && (
+                <div className="text-left">
+                  <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
+                    <span className="text-xl">📋</span> Player Statistics
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {room.players.map((p) => {
+                      const stats = playerStatistics[p.id] as Record<string, number | string> | undefined;
+                      if (!stats) return null;
+                      return (
+                        <div key={p.id} className="rounded-xl px-4 py-3 border border-white/[0.06] bg-white/[0.03]">
+                          <p className="font-medium text-sm mb-2">
+                            {p.name} {p.id === playerId && <span className="text-text-muted text-xs">(You)</span>}
+                          </p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-text-muted">
+                            <span>👑 Raja: {String(stats.timesRaja ?? 0)}x</span>
+                            <span>📜 Mantri: {String(stats.timesMantri ?? 0)}x</span>
+                            <span>🥷 Chor: {String(stats.timesChor ?? 0)}x</span>
+                            <span>🔫 Daku: {String(stats.timesDaku ?? 0)}x</span>
+                            <span>✓ Correct: {String(stats.correctGuesses ?? 0)}</span>
+                            <span>✗ Wrong: {String(stats.wrongGuesses ?? 0)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-3 justify-center pb-4">
+                <Button onClick={() => navigate("/")}>
+                  Back to Home
+                </Button>
+                <Button variant="ghost" onClick={() => navigate("/history")}>
+                  Game History
+                </Button>
+              </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {phase === "waiting" && (
           <Button variant="ghost" onClick={() => navigate("/")}>
@@ -604,68 +711,38 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
     return <p className="text-text-muted text-sm">No rounds completed yet.</p>;
   }
 
-  const medals = ["🥇", "🥈", "🥉"];
-
   return (
     <div className="space-y-6">
       {/* Hero Rankings */}
       <div className="text-left">
-        <h3 className="text-base font-semibold mb-3 flex items-center gap-2 text-text-secondary">
-          <span className="text-lg">🏆</span> Current Rankings
+        <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
+          <span className="text-xl">🏆</span> Current Rankings
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {sorted.map((p, i) => {
-            const isFirst = i === 0;
-            return (
-              <div
-                key={p.id}
-                className={`rounded-xl px-4 py-3 flex items-center gap-3 border transition-shadow ${
-                  isFirst
-                    ? "border-yellow-500/30 bg-gradient-to-br from-yellow-900/15 via-transparent to-transparent shadow-[0_0_15px_rgba(234,179,8,0.08)]"
-                    : "border-white/[0.06] bg-white/[0.03]"
-                }`}
-              >
-                <span className="text-2xl shrink-0">{medals[i] ?? `${i + 1}.`}</span>
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold shrink-0"
-                  style={{ backgroundColor: p.avatarColor }}
-                >
-                  {p.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`font-semibold truncate ${isFirst ? "text-base" : "text-sm"}`}>
-                    {p.name}
-                    {p.id === playerId && <span className="text-text-muted text-[10px] ml-1 font-normal">(You)</span>}
-                  </p>
-                  <p className="text-[11px] text-text-muted">{placeLabel(i)}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className={`font-bold font-mono text-gold ${isFirst ? "text-xl" : "text-lg"}`}>{p.total}</p>
-                  <p className="text-[10px] text-text-muted -mt-0.5">Points</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <RankingCards
+          players={players}
+          roundHistory={roundHistory}
+          currentTotals={currentTotals}
+          playerId={playerId}
+        />
       </div>
 
       {/* Score History Table */}
       <div className="text-left">
-        <h3 className="text-base font-semibold mb-3 flex items-center gap-2 text-text-secondary">
-          <span className="text-lg">📊</span> Score History
+        <h3 className="text-base font-semibold mb-4 flex items-center gap-2 text-text">
+          <span className="text-xl">📊</span> Score History
         </h3>
         <div className="overflow-x-auto -mx-4 px-4">
-          <div className="overflow-y-auto max-h-[340px] rounded-lg border border-white/[0.06]">
+          <div className="overflow-y-auto rounded-lg border border-white/[0.06]" style={{ maxHeight: "55vh" }}>
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-[#1e1e3a]">
-                  <th className="sticky left-0 z-20 py-2.5 pr-3 text-left text-text-muted font-medium min-w-[76px] bg-[#1e1e3a]">
+                  <th className="sticky left-0 z-20 py-3 pr-4 text-left text-text-muted font-semibold min-w-[80px] bg-[#1e1e3a]">
                     Game
                   </th>
                   {sorted.map((p) => (
-                    <th key={p.id} className="py-2.5 px-3 text-right text-text-muted font-medium whitespace-nowrap min-w-[90px] bg-[#1e1e3a]">
+                    <th key={p.id} className="py-3 px-4 text-right text-text-muted font-semibold whitespace-nowrap min-w-[100px] bg-[#1e1e3a]">
                       {p.name}
-                      {p.id === playerId && <span className="text-text-muted text-[10px] ml-0.5 font-normal">(You)</span>}
+                      {p.id === playerId && <span className="text-text-muted text-xs ml-1 font-normal">(You)</span>}
                     </th>
                   ))}
                 </tr>
@@ -676,14 +753,14 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
                     key={rn}
                     className={`${i % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]"} hover:bg-white/[0.08] transition-colors`}
                   >
-                    <td className="sticky left-0 z-10 py-2.5 pr-3 text-text-muted font-medium whitespace-nowrap bg-inherit">
+                    <td className="sticky left-0 z-10 py-3 pr-4 text-text-muted font-medium whitespace-nowrap bg-inherit">
                       Game {rn}
                     </td>
                     {sorted.map((p) => {
                       const score = getScore(p.id, rn);
                       const role = getRole(p.id, rn);
                       return (
-                        <td key={p.id} className="py-2.5 px-3 text-right font-mono relative group">
+                        <td key={p.id} className="py-3 px-4 text-right font-mono relative group">
                           <span className={score > 0 ? "text-emerald-400 font-medium" : "text-gray-500"}>{score}</span>
                           {role && (
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-20">
@@ -703,11 +780,11 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
               </tbody>
               <tfoot>
                 <tr className="bg-[#1e1e3a] border-t border-white/10 sticky bottom-0 z-20">
-                  <td className="sticky left-0 z-30 py-3 pr-3 font-bold text-gold whitespace-nowrap bg-[#1e1e3a]">
+                  <td className="sticky left-0 z-30 py-3.5 pr-4 font-bold text-gold whitespace-nowrap bg-[#1e1e3a]">
                     TOTAL
                   </td>
                   {sorted.map((p) => (
-                    <td key={p.id} className="py-3 px-3 text-right font-bold font-mono text-gold bg-[#1e1e3a]">
+                    <td key={p.id} className="py-3.5 px-4 text-right font-bold font-mono text-gold bg-[#1e1e3a]">
                       {p.total}
                     </td>
                   ))}
@@ -717,6 +794,55 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function RankingCards({ players, roundHistory, currentTotals, playerId }: ScoreTableProps) {
+  const rows = toRows(roundHistory);
+  const medals = ["🥇", "🥈", "🥉"];
+
+  const sorted = [...players]
+    .map((p) => ({
+      ...p,
+      total: currentTotals[p.id] ?? rows.reduce((sum, r) => sum + (r.scores[p.id] ?? 0), 0),
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {sorted.map((p, i) => {
+        const isFirst = i === 0;
+        return (
+          <div
+            key={p.id}
+            className={`rounded-xl px-5 py-4 flex items-center gap-4 border transition-shadow ${
+              isFirst
+                ? "border-yellow-500/30 bg-gradient-to-br from-yellow-900/15 via-transparent to-transparent shadow-[0_0_20px_rgba(234,179,8,0.1)]"
+                : "border-white/[0.06] bg-white/[0.03]"
+            }`}
+          >
+            <span className="text-3xl shrink-0">{medals[i] ?? `${i + 1}.`}</span>
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
+              style={{ backgroundColor: p.avatarColor }}
+            >
+              {p.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`font-semibold ${isFirst ? "text-base" : "text-sm"}`}>
+                {p.name}
+                {p.id === playerId && <span className="text-text-muted text-xs ml-1 font-normal">(You)</span>}
+              </p>
+              <p className="text-xs text-text-muted mt-0.5">{placeLabel(i)}</p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className={`font-bold font-mono text-gold ${isFirst ? "text-2xl" : "text-xl"}`}>{p.total}</p>
+              <p className="text-xs text-text-muted -mt-0.5">Points</p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

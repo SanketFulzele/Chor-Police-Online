@@ -8,6 +8,7 @@ import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { useState } from "react";
 import { SocketEvents } from "../../shared/socket/events";
+import { saveSession } from "../utils/session";
 
 interface CreateRoomForm {
   name: string;
@@ -42,6 +43,7 @@ export function CreateRoom() {
     socket.once(SocketEvents.ROOM_CREATED, ({ roomCode, playerId, room }) => {
       setPlayerId(playerId);
       setRoom(room);
+      saveSession({ roomCode, playerId, playerName: data.name, isHost: true });
       setLoading(false);
       navigate(`/room?code=${roomCode}`);
     });

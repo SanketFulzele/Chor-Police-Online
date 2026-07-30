@@ -1,10 +1,13 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { HowToPlayModal } from "../components/ui/HowToPlayModal";
 
 export function Home() {
   const navigate = useNavigate();
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
@@ -46,6 +49,14 @@ export function Home() {
           >
             Join Room
           </Button>
+          <Button
+            variant="ghost"
+            size="md"
+            fullWidth
+            onClick={() => setShowHowToPlay(true)}
+          >
+            📖 How to Play
+          </Button>
         </Card>
 
         <Card className="text-center">
@@ -54,6 +65,8 @@ export function Home() {
           </p>
         </Card>
       </motion.div>
+
+      <HowToPlayModal open={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
     </div>
   );
 }
