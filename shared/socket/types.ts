@@ -1,12 +1,18 @@
-export type GameRole = "raja" | "mantri" | "chor" | "police";
+export type GameRole = "raja" | "mantri" | "chor" | "daku";
 
 export type GamePhase =
   | "waiting"
-  | "role-assignment"
-  | "reveal-raja"
-  | "reveal-mantri"
-  | "police-selection"
-  | "reveal-result"
+  | "shuffling"
+  | "card-distribution"
+  | "card-reveal"
+  | "card-hidden"
+  | "waiting-raja"
+  | "raja-calling"
+  | "mantri-reveal"
+  | "guessing"
+  | "reveal-roles"
+  | "score-update"
+  | "leaderboard"
   | "finished";
 
 export interface PlayerStatistics {
@@ -17,7 +23,7 @@ export interface PlayerStatistics {
   timesRaja: number;
   timesMantri: number;
   timesChor: number;
-  timesPolice: number;
+  timesDaku: number;
   correctGuesses: number;
   wrongGuesses: number;
   averageScore: number;
@@ -29,6 +35,7 @@ export interface Player {
   name: string;
   isHost: boolean;
   isConnected: boolean;
+  isReady: boolean;
   avatarColor: string;
   joinedAt: number;
   roleHistory: GameRole[];

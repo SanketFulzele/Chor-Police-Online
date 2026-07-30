@@ -31,7 +31,7 @@ export function calculateLeaderboard(
     }
     for (const [playerId, role] of Object.entries(round.roles)) {
       if (!roleCounts[playerId]) {
-        roleCounts[playerId] = { raja: 0, mantri: 0, chor: 0, police: 0 };
+        roleCounts[playerId] = { raja: 0, mantri: 0, chor: 0, daku: 0 };
       }
       roleCounts[playerId][role]++;
     }
@@ -42,7 +42,7 @@ export function calculateLeaderboard(
       playerId,
       playerName: playerNames[playerId] ?? "Unknown",
       totalScore,
-      roleCounts: roleCounts[playerId] ?? { raja: 0, mantri: 0, chor: 0, police: 0 },
+      roleCounts: roleCounts[playerId] ?? { raja: 0, mantri: 0, chor: 0, daku: 0 },
     }))
     .sort((a, b) => b.totalScore - a.totalScore);
 }

@@ -51,6 +51,16 @@ export function useRoom() {
     reset();
   }, [socket, reset]);
 
+  const toggleReady = useCallback(() => {
+    if (!socket) return;
+    const player = room?.players.find((p) => p.id === playerId);
+    if (player?.isReady) {
+      socket.emit(SocketEvents.PLAYER_UNREADY);
+    } else {
+      socket.emit(SocketEvents.PLAYER_READY);
+    }
+  }, [socket, room, playerId]);
+
   const startGame = useCallback(() => {
     if (!socket) return;
     socket.emit(SocketEvents.START_GAME);
@@ -64,6 +74,7 @@ export function useRoom() {
     createRoom,
     joinRoom,
     leaveRoom,
+    toggleReady,
     startGame,
   };
 }

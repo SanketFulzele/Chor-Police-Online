@@ -1,8 +1,16 @@
 import type { ScoreInput, ScoreOutput } from "./types";
 
+const RAJA_POINTS = 1000;
+const MANTRI_CORRECT_POINTS = 500;
+const MANTRI_WRONG_POINTS = 0;
+const DAKU_POINTS = 300;
+const CHOR_CORRECT_POINTS = 0;
+const CHOR_WRONG_POINTS = 500;
+
 export function calculateScores(input: ScoreInput): ScoreOutput {
   const { chosenId, roles } = input;
   const chosenRole = roles[chosenId];
+
   const isCorrect = chosenRole === "chor";
 
   const scores: Record<string, number> = {};
@@ -10,12 +18,16 @@ export function calculateScores(input: ScoreInput): ScoreOutput {
   for (const [playerId, role] of Object.entries(roles)) {
     switch (role) {
       case "raja":
+        scores[playerId] = RAJA_POINTS;
+        break;
       case "mantri":
-      case "police":
-        scores[playerId] = isCorrect ? 500 : 0;
+        scores[playerId] = isCorrect ? MANTRI_CORRECT_POINTS : MANTRI_WRONG_POINTS;
         break;
       case "chor":
-        scores[playerId] = isCorrect ? 0 : 500;
+        scores[playerId] = isCorrect ? CHOR_CORRECT_POINTS : CHOR_WRONG_POINTS;
+        break;
+      case "daku":
+        scores[playerId] = DAKU_POINTS;
         break;
     }
   }

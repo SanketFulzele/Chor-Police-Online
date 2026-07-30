@@ -2,21 +2,31 @@ import type { GamePhase, PhaseTransition } from "./types";
 
 export const PHASES: GamePhase[] = [
   "waiting",
-  "role-assignment",
-  "reveal-raja",
-  "reveal-mantri",
-  "police-selection",
-  "reveal-result",
+  "shuffling",
+  "card-distribution",
+  "card-reveal",
+  "waiting-raja",
+  "raja-calling",
+  "mantri-reveal",
+  "guessing",
+  "reveal-roles",
+  "score-update",
+  "leaderboard",
   "finished",
 ];
 
 export const TRANSITIONS: PhaseTransition[] = [
-  { from: "waiting", to: ["role-assignment"] },
-  { from: "role-assignment", to: ["reveal-raja"] },
-  { from: "reveal-raja", to: ["reveal-mantri"] },
-  { from: "reveal-mantri", to: ["police-selection"] },
-  { from: "police-selection", to: ["reveal-result"] },
-  { from: "reveal-result", to: ["finished"] },
+  { from: "waiting", to: ["shuffling"] },
+  { from: "shuffling", to: ["card-distribution"] },
+  { from: "card-distribution", to: ["card-reveal"] },
+  { from: "card-reveal", to: ["waiting-raja"] },
+  { from: "waiting-raja", to: ["raja-calling"] },
+  { from: "raja-calling", to: ["mantri-reveal"] },
+  { from: "mantri-reveal", to: ["guessing"] },
+  { from: "guessing", to: ["reveal-roles"] },
+  { from: "reveal-roles", to: ["score-update"] },
+  { from: "score-update", to: ["leaderboard"] },
+  { from: "leaderboard", to: ["shuffling", "finished"] },
   { from: "finished", to: [] },
 ];
 

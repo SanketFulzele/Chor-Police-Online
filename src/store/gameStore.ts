@@ -29,11 +29,16 @@ interface GameState {
   myRole: GameRole | null;
   phase: GamePhase | null;
   round: number;
-  rajaId: string | null;
+  hasRevealed: boolean;
+  hasHidden: boolean;
+  revealedPlayers: string[];
+  hiddenPlayers: string[];
+  isShuffling: boolean;
   mantriId: string | null;
-  chosenId: string | null;
-  chorId: string | null;
-  isCorrect: boolean | null;
+  revealedRoles: Record<string, GameRole> | null;
+  lastRoundResult: RoundResultData | null;
+  currentScores: Record<string, number> | null;
+  currentTotals: Record<string, number> | null;
   leaderboard: LeaderboardEntry[];
   winnerId: string | null;
   winnerName: string | null;
@@ -43,10 +48,19 @@ interface GameState {
   setMyRole: (role: GameRole) => void;
   setPhase: (phase: GamePhase) => void;
   setRound: (round: number) => void;
-  setRajaId: (id: string | null) => void;
+  setHasRevealed: (v: boolean) => void;
+  setHasHidden: (v: boolean) => void;
+  addRevealedPlayer: (playerId: string) => void;
+  addHiddenPlayer: (playerId: string) => void;
+  setShuffling: (v: boolean) => void;
   setMantriId: (id: string | null) => void;
-  setSelectionResult: (data: { chosenId: string; chorId: string; isCorrect: boolean }) => void;
+  setRevealedRoles: (roles: Record<string, GameRole> | null) => void;
+  setLastRoundResult: (result: RoundResultData | null) => void;
+  setCurrentScores: (s: Record<string, number> | null) => void;
+  setCurrentTotals: (t: Record<string, number> | null) => void;
+  setLeaderboard: (lb: LeaderboardEntry[]) => void;
   setGameOver: (data: { winnerId: string; winnerName: string; leaderboard: LeaderboardEntry[]; playerStatistics: Record<string, unknown>; roundHistory: RoundHistoryItem[] }) => void;
+  resetRound: () => void;
   reset: () => void;
 }
 
@@ -54,11 +68,16 @@ export const useGameStore = create<GameState>((set) => ({
   myRole: null,
   phase: null,
   round: 0,
-  rajaId: null,
+  hasRevealed: false,
+  hasHidden: false,
+  revealedPlayers: [],
+  hiddenPlayers: [],
+  isShuffling: false,
   mantriId: null,
-  chosenId: null,
-  chorId: null,
-  isCorrect: null,
+  revealedRoles: null,
+  lastRoundResult: null,
+  currentScores: null,
+  currentTotals: null,
   leaderboard: [],
   winnerId: null,
   winnerName: null,
@@ -68,10 +87,27 @@ export const useGameStore = create<GameState>((set) => ({
   setMyRole: (role) => set({ myRole: role }),
   setPhase: (phase) => set({ phase }),
   setRound: (round) => set({ round }),
-  setRajaId: (id) => set({ rajaId: id }),
+  setHasRevealed: (v) => set({ hasRevealed: v }),
+  setHasHidden: (v) => set({ hasHidden: v }),
+  addRevealedPlayer: (playerId) =>
+    set((state) => ({
+      revealedPlayers: state.revealedPlayers.includes(playerId)
+        ? state.revealedPlayers
+        : [...state.revealedPlayers, playerId],
+    })),
+  addHiddenPlayer: (playerId) =>
+    set((state) => ({
+      hiddenPlayers: state.hiddenPlayers.includes(playerId)
+        ? state.hiddenPlayers
+        : [...state.hiddenPlayers, playerId],
+    })),
+  setShuffling: (v) => set({ isShuffling: v }),
   setMantriId: (id) => set({ mantriId: id }),
-  setSelectionResult: (data) =>
-    set({ chosenId: data.chosenId, chorId: data.chorId, isCorrect: data.isCorrect }),
+  setRevealedRoles: (roles) => set({ revealedRoles: roles }),
+  setLastRoundResult: (result) => set({ lastRoundResult: result }),
+  setCurrentScores: (s) => set({ currentScores: s }),
+  setCurrentTotals: (t) => set({ currentTotals: t }),
+  setLeaderboard: (lb) => set({ leaderboard: lb }),
   setGameOver: (data) =>
     set({
       winnerId: data.winnerId,
@@ -81,16 +117,36 @@ export const useGameStore = create<GameState>((set) => ({
       roundHistory: data.roundHistory,
       phase: "finished",
     }),
+
+  resetRound: () =>
+    set({
+      hasRevealed: false,
+      hasHidden: false,
+      revealedPlayers: [],
+      hiddenPlayers: [],
+      isShuffling: false,
+      mantriId: null,
+      revealedRoles: null,
+      lastRoundResult: null,
+      currentScores: null,
+      currentTotals: null,
+      leaderboard: [],
+    }),
   reset: () =>
     set({
       myRole: null,
       phase: null,
       round: 0,
-      rajaId: null,
+      hasRevealed: false,
+      hasHidden: false,
+      revealedPlayers: [],
+      hiddenPlayers: [],
+      isShuffling: false,
       mantriId: null,
-      chosenId: null,
-      chorId: null,
-      isCorrect: null,
+      revealedRoles: null,
+      lastRoundResult: null,
+      currentScores: null,
+      currentTotals: null,
       leaderboard: [],
       winnerId: null,
       winnerName: null,
