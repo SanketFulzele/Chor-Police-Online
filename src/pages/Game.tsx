@@ -98,7 +98,7 @@ export function GamePage() {
     }
   };
 
-  const isGameplayPhase = phase && !["waiting", "shuffling", "card-distribution", null].includes(phase);
+  const isGameplayPhase = phase && !["waiting", "shuffling", "card-distribution", "leaderboard", null].includes(phase);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
@@ -192,7 +192,7 @@ export function GamePage() {
         )}
 
         {/* Persistent role card - always available during gameplay */}
-        {myRole && phase && !["waiting", "shuffling", "card-distribution", "finished", null].includes(phase) && (
+        {myRole && phase && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase) && (
           <Card>
             <GameCard
               role={myRole}
@@ -572,10 +572,11 @@ function toRows(rh: ScoreTableProps["roundHistory"]): RoundRow[] {
   return rh.map((r) => ({ n: r.roundNumber ?? r.round ?? 0, scores: r.scores, roles: r.roles }));
 }
 
-function ordinal(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+function placeLabel(i: number): string {
+  if (i === 0) return "1st Place";
+  if (i === 1) return "2nd Place";
+  if (i === 2) return "3rd Place";
+  return `${i + 1}th Place`;
 }
 
 function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTableProps) {
@@ -603,81 +604,118 @@ function ScoreTable({ players, roundHistory, currentTotals, playerId }: ScoreTab
     return <p className="text-text-muted text-sm">No rounds completed yet.</p>;
   }
 
-  const medal = (i: number) =>
-    i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
+  const medals = ["🥇", "🥈", "🥉"];
 
   return (
-    <div className="space-y-4">
-      {/* Compact ranking bar */}
-      <div className="flex flex-wrap gap-x-5 gap-y-1 justify-center text-sm">
-        {sorted.map((p, i) => {
-          const m = medal(i);
-          return (
-            <span key={p.id} className="flex items-center gap-1.5 whitespace-nowrap">
-              {m ? <span>{m}</span> : <span className="text-xs text-text-muted">{ordinal(i + 1)}</span>}
-              <span className={p.id === playerId ? "font-semibold" : ""}>{p.name}</span>
-              <span className="font-mono text-gold font-bold">{p.total}</span>
-            </span>
-          );
-        })}
+    <div className="space-y-6">
+      {/* Hero Rankings */}
+      <div className="text-left">
+        <h3 className="text-base font-semibold mb-3 flex items-center gap-2 text-text-secondary">
+          <span className="text-lg">🏆</span> Current Rankings
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {sorted.map((p, i) => {
+            const isFirst = i === 0;
+            return (
+              <div
+                key={p.id}
+                className={`rounded-xl px-4 py-3 flex items-center gap-3 border transition-shadow ${
+                  isFirst
+                    ? "border-yellow-500/30 bg-gradient-to-br from-yellow-900/15 via-transparent to-transparent shadow-[0_0_15px_rgba(234,179,8,0.08)]"
+                    : "border-white/[0.06] bg-white/[0.03]"
+                }`}
+              >
+                <span className="text-2xl shrink-0">{medals[i] ?? `${i + 1}.`}</span>
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold shrink-0"
+                  style={{ backgroundColor: p.avatarColor }}
+                >
+                  {p.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`font-semibold truncate ${isFirst ? "text-base" : "text-sm"}`}>
+                    {p.name}
+                    {p.id === playerId && <span className="text-text-muted text-[10px] ml-1 font-normal">(You)</span>}
+                  </p>
+                  <p className="text-[11px] text-text-muted">{placeLabel(i)}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className={`font-bold font-mono text-gold ${isFirst ? "text-xl" : "text-lg"}`}>{p.total}</p>
+                  <p className="text-[10px] text-text-muted -mt-0.5">Points</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Transposed table: rows = games, columns = players */}
-      <div className="overflow-x-auto -mx-4 px-4">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="sticky left-0 z-10 py-2 pr-3 text-left text-text-muted font-medium min-w-[72px] bg-[#16162a]">
-                Game
-              </th>
-              {sorted.map((p) => (
-                <th key={p.id} className="py-2 px-2.5 text-right text-text-muted font-medium whitespace-nowrap min-w-[88px]">
-                  <span className="text-xs">{p.name}</span>
-                  {p.id === playerId && <span className="text-text-muted text-[10px] ml-0.5">(You)</span>}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {roundNumbers.map((rn, i) => (
-              <tr key={rn} className={i % 2 === 1 ? "bg-white/[0.03]" : ""}>
-                <td className="sticky left-0 z-10 py-1.5 pr-3 text-text-muted font-medium whitespace-nowrap bg-[#16162a]">
-                  <span className="text-xs">Game {rn}</span>
-                </td>
-                {sorted.map((p) => {
-                  const score = getScore(p.id, rn);
-                  const role = getRole(p.id, rn);
-                  return (
-                    <td key={p.id} className="py-1.5 px-2.5 text-right font-mono text-xs relative group">
-                      <span className={score > 0 ? "text-emerald" : "text-text-muted"}>{score}</span>
-                      {role && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-20">
-                          <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg border border-white/10">
-                            <div className="text-center text-text-muted text-[10px] mb-0.5">Game {rn}</div>
-                            <div className="flex items-center gap-1.5">
-                              <span>{ROLE_EMOJIS[role]} {ROLE_LABELS[role]}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+      {/* Score History Table */}
+      <div className="text-left">
+        <h3 className="text-base font-semibold mb-3 flex items-center gap-2 text-text-secondary">
+          <span className="text-lg">📊</span> Score History
+        </h3>
+        <div className="overflow-x-auto -mx-4 px-4">
+          <div className="overflow-y-auto max-h-[340px] rounded-lg border border-white/[0.06]">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-[#1e1e3a]">
+                  <th className="sticky left-0 z-20 py-2.5 pr-3 text-left text-text-muted font-medium min-w-[76px] bg-[#1e1e3a]">
+                    Game
+                  </th>
+                  {sorted.map((p) => (
+                    <th key={p.id} className="py-2.5 px-3 text-right text-text-muted font-medium whitespace-nowrap min-w-[90px] bg-[#1e1e3a]">
+                      {p.name}
+                      {p.id === playerId && <span className="text-text-muted text-[10px] ml-0.5 font-normal">(You)</span>}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {roundNumbers.map((rn, i) => (
+                  <tr
+                    key={rn}
+                    className={`${i % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]"} hover:bg-white/[0.08] transition-colors`}
+                  >
+                    <td className="sticky left-0 z-10 py-2.5 pr-3 text-text-muted font-medium whitespace-nowrap bg-inherit">
+                      Game {rn}
                     </td>
-                  );
-                })}
-              </tr>
-            ))}
-            {/* Total row */}
-            <tr className="border-t border-white/10 bg-white/[0.06]">
-              <td className="sticky left-0 z-10 py-2 pr-3 font-bold text-gold whitespace-nowrap bg-[#16162a]">
-                TOTAL
-              </td>
-              {sorted.map((p) => (
-                <td key={p.id} className="py-2 px-2.5 text-right font-bold font-mono text-sm text-gold">
-                  {p.total}
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
+                    {sorted.map((p) => {
+                      const score = getScore(p.id, rn);
+                      const role = getRole(p.id, rn);
+                      return (
+                        <td key={p.id} className="py-2.5 px-3 text-right font-mono relative group">
+                          <span className={score > 0 ? "text-emerald-400 font-medium" : "text-gray-500"}>{score}</span>
+                          {role && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-20">
+                              <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg border border-white/10">
+                                <div className="text-center text-text-muted text-[10px] mb-0.5">Game {rn}</div>
+                                <div className="flex items-center gap-1.5">
+                                  <span>{ROLE_EMOJIS[role]} {ROLE_LABELS[role]}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-[#1e1e3a] border-t border-white/10 sticky bottom-0 z-20">
+                  <td className="sticky left-0 z-30 py-3 pr-3 font-bold text-gold whitespace-nowrap bg-[#1e1e3a]">
+                    TOTAL
+                  </td>
+                  {sorted.map((p) => (
+                    <td key={p.id} className="py-3 px-3 text-right font-bold font-mono text-gold bg-[#1e1e3a]">
+                      {p.total}
+                    </td>
+                  ))}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );
