@@ -46,8 +46,6 @@ export const PHASE_DURATIONS = {
   shuffling: 3000,
   "card-distribution": 0,
   "card-reveal": 0,
-  "waiting-raja": 0,
-  "raja-calling": 0,
   "mantri-reveal": 3000,
   guessing: 0,
   "reveal-roles": 4000,

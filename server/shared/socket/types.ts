@@ -5,9 +5,6 @@ export type GamePhase =
   | "shuffling"
   | "card-distribution"
   | "card-reveal"
-  | "card-hidden"
-  | "waiting-raja"
-  | "raja-calling"
   | "mantri-reveal"
   | "guessing"
   | "reveal-roles"
@@ -43,6 +40,7 @@ export interface Player {
   totalScore: number;
   statistics: PlayerStatistics;
   currentRole?: GameRole;
+  publicRole?: GameRole;
   hasRevealed: boolean;
   hasHidden: boolean;
 }

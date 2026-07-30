@@ -8,10 +8,8 @@ import { useGameStore } from "../store/gameStore";
 import { useGame } from "../hooks/useGame";
 import { GameCard } from "../components/game/Card";
 import { ShuffleAnimation } from "../components/game/ShuffleAnimation";
-import { WaitingProgress } from "../components/game/WaitingProgress";
 import { ROLE_EMOJIS, ROLE_LABELS, ROLE_COLORS } from "../constants/game";
 import { usePersistence } from "../hooks/usePersistence";
-
 
 export function GamePage() {
   const navigate = useNavigate();
@@ -23,9 +21,8 @@ export function GamePage() {
   const myRole = useGameStore((s) => s.myRole);
   const hasRevealed = useGameStore((s) => s.hasRevealed);
   const hasHidden = useGameStore((s) => s.hasHidden);
-  const revealedPlayers = useGameStore((s) => s.revealedPlayers);
-  const hiddenPlayers = useGameStore((s) => s.hiddenPlayers);
   const mantriId = useGameStore((s) => s.mantriId);
+  const showResult = useGameStore((s) => s.showResult);
   const revealedRoles = useGameStore((s) => s.revealedRoles);
   const lastRoundResult = useGameStore((s) => s.lastRoundResult);
   const currentScores = useGameStore((s) => s.currentScores);
@@ -37,13 +34,14 @@ export function GamePage() {
   const roundHistory = useGameStore((s) => s.roundHistory);
 
   const {
-    revealCard, hideCard, callMantri, submitGuess,
+    revealCard, hideCard, askForMantri, submitGuess,
     startGame, nextRound, endGame,
   } = useGame();
 
   const { saveGame } = usePersistence();
 
   const isHost = room?.hostId === playerId;
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
 
   useEffect(() => {
     if (!room) {
@@ -76,34 +74,32 @@ export function GamePage() {
     }
   }, [phase, winnerId, winnerName, room, roundHistory, saveGame]);
 
-  const phaseTitle: Record<string, string> = {
-    waiting: "Ready to Play",
-    shuffling: "Shuffling Cards...",
-    "card-distribution": "Cards Distributed",
-    "card-reveal": "Reveal Your Card",
-    "waiting-raja": "All Cards Hidden",
-    "raja-calling": "Raja is Choosing Mantri",
-    "mantri-reveal": "Mantri Revealed",
-    guessing: "Mantri is Guessing",
-    "reveal-roles": "Revealing All Roles",
-    "score-update": "Round Result",
-    leaderboard: "Leaderboard",
-    finished: "Game Over",
-  };
+  useEffect(() => {
+    if (showResult) {
+      const timer = setTimeout(() => {
+        useGameStore.getState().setShowResult(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showResult]);
 
   if (!room) return null;
 
   const mantri = mantriId ? room.players.find((p) => p.id === mantriId) : null;
+  const rajaRevealed = room.players.some((p) => p.publicRole === "raja");
 
-  // ---- Raja player list for calling mantri ----
-  const rajaTargets = room.players.filter(
-    (p) => p.id !== playerId && p.isConnected
+  const hiddenPlayers = room.players.filter(
+    (p) => p.publicRole !== "raja" && p.publicRole !== "mantri" && p.id !== playerId
   );
 
-  // ---- Mantri guess targets (only chor/daku) ----
-  const guessTargets = room.players.filter(
-    (p) => p.currentRole !== "raja" && p.currentRole !== "mantri" && p.isConnected
-  );
+  const handleConfirmGuess = () => {
+    if (selectedPlayer) {
+      submitGuess(selectedPlayer);
+      setSelectedPlayer(null);
+    }
+  };
+
+  const isGameplayPhase = phase && !["waiting", "shuffling", "card-distribution", null].includes(phase);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
@@ -114,12 +110,61 @@ export function GamePage() {
       >
         <div className="space-y-1">
           <h2 className="text-2xl font-bold gold-gradient">
-            {phaseTitle[phase ?? "waiting"]}
+            {phase === "shuffling" && "Shuffling Cards..."}
+            {phase === "card-distribution" && "Cards Distributed"}
+            {phase === "card-reveal" && "Your Card"}
+            {phase === "mantri-reveal" && "Mantri Revealed"}
+            {phase === "guessing" && "Mantri is Choosing"}
+            {phase === "reveal-roles" && "Revealing All Roles"}
+            {phase === "score-update" && "Round Result"}
+            {phase === "leaderboard" && "Leaderboard"}
+            {phase === "finished" && "Game Over"}
+            {phase === "waiting" && "Ready to Play"}
           </h2>
           <p className="text-text-muted text-sm">
             Round {round} — Room: {room.code}
           </p>
         </div>
+
+        {/* Persistent player list during gameplay */}
+        {isGameplayPhase && (
+          <div className="space-y-2">
+            {room.players.map((p) => {
+              const isPublicRaja = p.publicRole === "raja";
+              const isPublicMantri = p.publicRole === "mantri";
+              return (
+                <div
+                  key={p.id}
+                  className="glass rounded-xl px-4 py-3 flex items-center gap-3"
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
+                    style={{ backgroundColor: p.avatarColor }}
+                  >
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="font-medium truncate">
+                      {p.name} {p.id === playerId && <span className="text-text-muted text-xs">(You)</span>}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isPublicRaja && (
+                      <span className="text-sm font-bold text-gold flex items-center gap-1">
+                        👑 Raja
+                      </span>
+                    )}
+                    {isPublicMantri && (
+                      <span className="text-sm font-bold text-purple-400 flex items-center gap-1">
+                        📜 Mantri
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Phase: waiting */}
         {phase === "waiting" && (
@@ -154,88 +199,32 @@ export function GamePage() {
         {/* Phase: card-distribution / card-reveal */}
         {(phase === "card-distribution" || phase === "card-reveal") && (
           <div className="space-y-6">
-            <GameCard
-              role={myRole ?? undefined}
-              revealed={hasRevealed}
-              disabled={hasHidden}
-              showActions={phase === "card-reveal"}
-              onReveal={revealCard}
-              onHide={hideCard}
-            />
-            {hasRevealed && !hasHidden && (
-              <p className="text-sm text-yellow-400">Revealed! Now hide your card.</p>
+            {phase === "card-reveal" && (
+              <>
+                <GameCard
+                  role={myRole ?? undefined}
+                  revealed={hasRevealed && !hasHidden}
+                  onReveal={revealCard}
+                  onHide={hideCard}
+                />
+
+                {myRole === "raja" && hasRevealed && !hasHidden && !rajaRevealed && (
+                  <p className="text-sm text-yellow-400">
+                    Raja revealed! Other players can now see who you are.
+                  </p>
+                )}
+
+                {myRole === "raja" && rajaRevealed && (
+                  <Button
+                    className="gold-gradient text-black font-bold"
+                    onClick={askForMantri}
+                  >
+                    Ask: Who is my Mantri?
+                  </Button>
+                )}
+              </>
             )}
-            {hasHidden && (
-              <p className="text-sm text-green-400">Waiting for other players...</p>
-            )}
-            <WaitingProgress
-              players={room.players}
-              revealedIds={revealedPlayers}
-              hiddenIds={hiddenPlayers}
-            />
           </div>
-        )}
-
-        {/* Phase: waiting-raja */}
-        {phase === "waiting-raja" && (
-          <Card>
-            <p className="text-4xl mb-2">👑</p>
-            <p className="text-text-secondary">All cards hidden. Preparing for Raja...</p>
-          </Card>
-        )}
-
-        {/* Phase: raja-calling */}
-        {phase === "raja-calling" && (
-          <Card>
-            {myRole === "raja" ? (
-              <>
-                <p className="text-4xl mb-2">👑</p>
-                <p className="text-lg font-semibold text-gold mb-4">You are the Raja</p>
-                <p className="text-text-secondary text-sm mb-4">
-                  Choose a player to be your Mantri
-                </p>
-                <div className="space-y-2">
-                  {rajaTargets.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => callMantri(p.id)}
-                      className="w-full glass rounded-xl px-4 py-3 text-left flex items-center gap-3 hover:bg-white/10 transition-colors cursor-pointer"
-                    >
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
-                        style={{ backgroundColor: p.avatarColor }}
-                      >
-                        {p.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-medium">{p.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-4xl mb-2">👑</p>
-                <p className="text-text-secondary">The Raja is choosing a Mantri...</p>
-                <div className="mt-4 space-y-2">
-                  {room.players.map((p) => (
-                    <div
-                      key={p.id}
-                      className="glass rounded-xl px-4 py-3 flex items-center gap-3 opacity-60"
-                    >
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
-                        style={{ backgroundColor: p.avatarColor }}
-                      >
-                        {p.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-medium">{p.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </Card>
         )}
 
         {/* Phase: mantri-reveal */}
@@ -272,26 +261,17 @@ export function GamePage() {
                   You are the Mantri
                 </p>
                 <p className="text-text-secondary text-sm mb-4">
-                  Who is the Chor?
+                  Identify the Chor
                 </p>
-                <div className="space-y-2">
-                  {guessTargets.map((p) => {
-                    const roleLabel = ROLE_LABELS[p.currentRole ?? "chor"];
-                    const roleEmoji = ROLE_EMOJIS[p.currentRole ?? "chor"];
-                    const roleColor = ROLE_COLORS[p.currentRole ?? "chor"];
-                    return (
-                      <GuessButton
-                        key={p.id}
-                        name={p.name}
-                        avatarColor={p.avatarColor}
-                        roleLabel={roleLabel}
-                        roleEmoji={roleEmoji}
-                        roleColor={roleColor}
-                        onConfirm={() => submitGuess(p.id)}
-                      />
-                    );
-                  })}
-                </div>
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    const modal = document.getElementById("mantri-modal");
+                    if (modal) modal.classList.remove("hidden");
+                  }}
+                >
+                  Identify the Chor
+                </Button>
               </>
             ) : (
               <>
@@ -299,25 +279,81 @@ export function GamePage() {
                 <p className="text-text-secondary">
                   The Mantri is trying to identify the Chor...
                 </p>
-                <div className="mt-4 space-y-2">
-                  {room.players.map((p) => (
-                    <div
-                      key={p.id}
-                      className="glass rounded-xl px-4 py-3 flex items-center gap-3 opacity-60"
-                    >
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
-                        style={{ backgroundColor: p.avatarColor }}
-                      >
-                        {p.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-medium">{p.name}</span>
-                    </div>
-                  ))}
-                </div>
               </>
             )}
           </Card>
+        )}
+
+        {/* Mantri popup modal */}
+        <div
+          id="mantri-modal"
+          className="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        >
+          <div className="glass rounded-2xl p-6 w-full max-w-sm mx-4 space-y-4">
+            <p className="text-lg font-semibold text-center">Identify the Chor</p>
+            <p className="text-sm text-text-muted text-center">
+              Select one of the remaining players
+            </p>
+            <div className="space-y-2">
+              {hiddenPlayers.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelectedPlayer(p.id)}
+                  className={`w-full glass rounded-xl px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer ${
+                    selectedPlayer === p.id ? "ring-2 ring-gold bg-white/10" : "hover:bg-white/10"
+                  }`}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
+                    style={{ backgroundColor: p.avatarColor }}
+                  >
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="font-medium">{p.name}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById("mantri-modal")?.classList.add("hidden");
+                  setSelectedPlayer(null);
+                }}
+                className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-medium transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!selectedPlayer}
+                onClick={() => {
+                  handleConfirmGuess();
+                  document.getElementById("mantri-modal")?.classList.add("hidden");
+                }}
+                className="flex-1 px-4 py-2.5 bg-gold text-black hover:bg-gold/90 rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Result toast */}
+        {showResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`fixed top-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-lg text-lg font-bold ${
+              showResult.isCorrect
+                ? "bg-emerald/90 text-white"
+                : "bg-rose/90 text-white"
+            }`}
+          >
+            {showResult.isCorrect ? "✅ Correct Answer" : "❌ Wrong Answer"}
+          </motion.div>
         )}
 
         {/* Phase: reveal-roles */}
@@ -561,80 +597,5 @@ export function GamePage() {
         )}
       </motion.div>
     </div>
-  );
-}
-
-function GuessButton({
-  name,
-  avatarColor,
-  roleLabel,
-  roleEmoji,
-  roleColor,
-  onConfirm,
-}: {
-  name: string;
-  avatarColor: string;
-  roleLabel: string;
-  roleEmoji: string;
-  roleColor: string;
-  onConfirm: () => void;
-}) {
-  const [confirming, setConfirming] = useState(false);
-
-  if (confirming) {
-    return (
-      <div className="glass rounded-xl px-4 py-3 flex items-center gap-3">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
-          style={{ backgroundColor: avatarColor }}
-        >
-          {name.charAt(0).toUpperCase()}
-        </div>
-        <div className="flex-1 text-left">
-          <p className="font-medium">{name}</p>
-          <p className="text-xs" style={{ color: roleColor }}>
-            {roleEmoji} {roleLabel}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setConfirming(false)}
-            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="px-3 py-1.5 bg-rose hover:bg-rose/80 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => setConfirming(true)}
-      className="w-full glass rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-colors cursor-pointer text-left"
-    >
-      <div
-        className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
-        style={{ backgroundColor: avatarColor }}
-      >
-        {name.charAt(0).toUpperCase()}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{name}</p>
-        <p className="text-xs" style={{ color: roleColor }}>
-          {roleEmoji} {roleLabel}
-        </p>
-      </div>
-      <span className="text-xs text-text-muted">Select</span>
-    </button>
   );
 }

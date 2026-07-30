@@ -62,8 +62,18 @@ export interface CallMantriPayload {
   chosenId: string;
 }
 
+export interface RajaRevealedPayload {
+  playerId: string;
+}
+
 export interface MantriRevealedPayload {
   mantriId: string;
+}
+
+// ---- Result payloads ----
+
+export interface ShowResultPayload {
+  isCorrect: boolean;
 }
 
 // ---- Guessing payloads ----
@@ -177,7 +187,9 @@ export interface SocketPayloadMap {
   [SocketEvents.PHASE_CHANGED]: PhaseChangedPayload;
   [SocketEvents.CARD_REVEALED]: RevealCardPayload;
   [SocketEvents.CARD_HIDDEN]: HideCardPayload;
+  [SocketEvents.RAJA_REVEALED]: RajaRevealedPayload;
   [SocketEvents.MANTRI_REVEALED]: MantriRevealedPayload;
+  [SocketEvents.SHOW_RESULT]: ShowResultPayload;
   [SocketEvents.GUESS_SUBMITTED]: GuessSubmittedPayload;
   [SocketEvents.ROLES_REVEALED]: RolesRevealedPayload;
   [SocketEvents.ROUND_RESULT]: RoundResultPayload;

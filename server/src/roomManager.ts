@@ -61,6 +61,7 @@ export function createRoom(
         totalScore: 0,
         hasRevealed: false,
         hasHidden: false,
+        publicRole: undefined,
         statistics: {
           gamesPlayed: 0,
           wins: 0,
@@ -114,11 +115,12 @@ export function joinRoom(
     isReady: false,
     avatarColor: getNextColor(),
     joinedAt: now,
-    roleHistory: [],
+      roleHistory: [],
       currentScore: 0,
       totalScore: 0,
       hasRevealed: false,
       hasHidden: false,
+      publicRole: undefined,
       statistics: {
         gamesPlayed: 0,
         wins: 0,

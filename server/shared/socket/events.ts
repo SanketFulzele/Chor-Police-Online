@@ -27,8 +27,11 @@ export const SocketEvents = {
 
   // Raja / Mantri phase
   CALL_MANTRI: "call-mantri",
-  MANTRI_CALLED: "mantri-called",
+  RAJA_REVEALED: "raja-revealed",
   MANTRI_REVEALED: "mantri-revealed",
+
+  // Result
+  SHOW_RESULT: "show-result",
 
   // Guessing
   SUBMIT_GUESS: "submit-guess",

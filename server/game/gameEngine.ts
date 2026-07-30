@@ -33,8 +33,7 @@ export interface EngineResult {
 
 const PHASE_DELAYS: Partial<Record<GamePhase, number>> = {
   shuffling: 2500,
-  "waiting-raja": 500,
-  "mantri-reveal": 2500,
+  "mantri-reveal": 2000,
   "reveal-roles": 3000,
   "score-update": 2000,
 };
@@ -82,6 +81,7 @@ export function startGame(room: Room, player: Player): EngineResult {
 
   for (const p of room.players) {
     p.currentRole = undefined;
+    p.publicRole = undefined;
     p.hasRevealed = false;
     p.hasHidden = false;
   }
@@ -114,6 +114,7 @@ function distributeAndDeal(room: Room): EngineResult {
   for (const p of room.players) {
     p.currentRole = distribution.assignments[p.id];
     p.roleHistory.push(distribution.assignments[p.id]);
+    p.publicRole = undefined;
     p.hasRevealed = false;
     p.hasHidden = false;
   }
@@ -148,15 +149,22 @@ export function revealCard(room: Room, player: Player): EngineResult {
   if (player.hasHidden) {
     return invalid("Card already hidden", "ALREADY_HIDDEN");
   }
-  if (player.hasRevealed) {
-    return invalid("Card already revealed", "ALREADY_REVEALED");
-  }
 
+  const isFirstReveal = !player.hasRevealed;
   player.hasRevealed = true;
+
+  const events: EngineEvent[] = [
+    { event: SocketEvents.CARD_REVEALED, payload: { playerId: player.id } },
+  ];
+
+  if (player.currentRole === "raja" && isFirstReveal) {
+    player.publicRole = "raja";
+    events.push({ event: SocketEvents.RAJA_REVEALED, payload: { playerId: player.id } });
+  }
 
   return {
     ok: true,
-    events: [{ event: SocketEvents.CARD_REVEALED, payload: { playerId: player.id } }],
+    events,
     targetedEvents: [],
   };
 }
@@ -174,65 +182,36 @@ export function hideCard(room: Room, player: Player): EngineResult {
 
   player.hasHidden = true;
 
-  const events: EngineEvent[] = [
-    { event: SocketEvents.CARD_HIDDEN, payload: { playerId: player.id } },
-  ];
-
-  const allHidden = room.players.every((p) => p.hasHidden);
-  if (allHidden) {
-    room.phase = "waiting-raja";
-    events.push({ event: SocketEvents.PHASE_CHANGED, payload: { phase: "waiting-raja" } });
-
-    const targetedEvents: TargetedEvent[] = [];
-    const raja = room.players.find((p) => p.currentRole === "raja");
-    if (raja) {
-      targetedEvents.push({
-        event: SocketEvents.PHASE_CHANGED,
-        payload: { phase: "waiting-raja" },
-        playerId: raja.id,
-      });
-    }
-
-    const schedule: ScheduledEvent[] = [
-      {
-        delay: PHASE_DELAYS["waiting-raja"]!,
-        fromPhase: "waiting-raja",
-        phase: "raja-calling",
-        events: [{ event: SocketEvents.PHASE_CHANGED, payload: { phase: "raja-calling" } }],
-      },
-    ];
-
-    return { ok: true, events, targetedEvents, schedule };
-  }
-
-  return { ok: true, events, targetedEvents: [] };
+  return {
+    ok: true,
+    events: [{ event: SocketEvents.CARD_HIDDEN, payload: { playerId: player.id } }],
+    targetedEvents: [],
+  };
 }
 
-export function callMantri(room: Room, player: Player, chosenId: string): EngineResult {
-  const phaseErr = validatePhase(room, "raja-calling");
+export function callMantri(room: Room, player: Player, _chosenId?: string): EngineResult {
+  const phaseErr = validatePhase(room, "card-reveal");
   if (phaseErr) return phaseErr;
 
   if (player.currentRole !== "raja") {
-    return invalid("Only the Raja can call the Mantri", "NOT_RAJA");
+    return invalid("Only the Raja can ask for the Mantri", "NOT_RAJA");
   }
 
-  const target = room.players.find((p) => p.id === chosenId);
-  if (!target) {
-    return invalid("Invalid player", "INVALID_TARGET");
+  const mantri = room.players.find((p) => p.currentRole === "mantri");
+  if (!mantri) {
+    return invalid("Mantri not found", "MANTRI_NOT_FOUND");
   }
-  if (target.id === player.id) {
-    return invalid("Cannot choose yourself", "SELF_TARGET");
-  }
-  if (!target.isConnected) {
-    return invalid("Player disconnected", "TARGET_DISCONNECTED");
+  if (!mantri.isConnected) {
+    return invalid("Mantri disconnected", "MANTRI_DISCONNECTED");
   }
 
-  room.mantriId = chosenId;
+  mantri.publicRole = "mantri";
+  room.mantriId = mantri.id;
   room.phase = "mantri-reveal";
 
   const events: EngineEvent[] = [
     { event: SocketEvents.PHASE_CHANGED, payload: { phase: "mantri-reveal" } },
-    { event: SocketEvents.MANTRI_REVEALED, payload: { mantriId: chosenId } },
+    { event: SocketEvents.MANTRI_REVEALED, payload: { mantriId: mantri.id } },
   ];
 
   const schedule: ScheduledEvent[] = [
@@ -286,6 +265,7 @@ export function submitGuess(room: Room, player: Player, chosenId: string): Engin
   room.phase = "reveal-roles";
 
   const events: EngineEvent[] = [
+    { event: SocketEvents.SHOW_RESULT, payload: { isCorrect } },
     { event: SocketEvents.PHASE_CHANGED, payload: { phase: "reveal-roles" } },
     { event: SocketEvents.GUESS_SUBMITTED, payload: { playerId: player.id } },
     { event: SocketEvents.ROLES_REVEALED, payload: { roles } },
@@ -330,6 +310,7 @@ export function nextRound(room: Room, player: Player): EngineResult {
 
   for (const p of room.players) {
     p.currentRole = undefined;
+    p.publicRole = undefined;
     p.hasRevealed = false;
     p.hasHidden = false;
     p.currentScore = 0;
@@ -471,7 +452,7 @@ export function validateAction(
     case "hide-card":
       return validatePhase(room, "card-reveal");
     case "call-mantri":
-      return validatePhase(room, "raja-calling");
+      return validatePhase(room, "card-reveal");
     case "submit-guess":
       return validatePhase(room, "guessing");
     case "next-round":

@@ -35,6 +35,8 @@ interface GameState {
   hiddenPlayers: string[];
   isShuffling: boolean;
   mantriId: string | null;
+  rajaRevealedPlayerId: string | null;
+  showResult: { isCorrect: boolean } | null;
   revealedRoles: Record<string, GameRole> | null;
   lastRoundResult: RoundResultData | null;
   currentScores: Record<string, number> | null;
@@ -54,6 +56,8 @@ interface GameState {
   addHiddenPlayer: (playerId: string) => void;
   setShuffling: (v: boolean) => void;
   setMantriId: (id: string | null) => void;
+  setRajaRevealedPlayerId: (id: string | null) => void;
+  setShowResult: (result: { isCorrect: boolean } | null) => void;
   setRevealedRoles: (roles: Record<string, GameRole> | null) => void;
   setLastRoundResult: (result: RoundResultData | null) => void;
   setCurrentScores: (s: Record<string, number> | null) => void;
@@ -74,6 +78,8 @@ export const useGameStore = create<GameState>((set) => ({
   hiddenPlayers: [],
   isShuffling: false,
   mantriId: null,
+  rajaRevealedPlayerId: null,
+  showResult: null,
   revealedRoles: null,
   lastRoundResult: null,
   currentScores: null,
@@ -103,6 +109,8 @@ export const useGameStore = create<GameState>((set) => ({
     })),
   setShuffling: (v) => set({ isShuffling: v }),
   setMantriId: (id) => set({ mantriId: id }),
+  setRajaRevealedPlayerId: (id) => set({ rajaRevealedPlayerId: id }),
+  setShowResult: (result) => set({ showResult: result }),
   setRevealedRoles: (roles) => set({ revealedRoles: roles }),
   setLastRoundResult: (result) => set({ lastRoundResult: result }),
   setCurrentScores: (s) => set({ currentScores: s }),
@@ -126,6 +134,8 @@ export const useGameStore = create<GameState>((set) => ({
       hiddenPlayers: [],
       isShuffling: false,
       mantriId: null,
+      rajaRevealedPlayerId: null,
+      showResult: null,
       revealedRoles: null,
       lastRoundResult: null,
       currentScores: null,
@@ -143,6 +153,8 @@ export const useGameStore = create<GameState>((set) => ({
       hiddenPlayers: [],
       isShuffling: false,
       mantriId: null,
+      rajaRevealedPlayerId: null,
+      showResult: null,
       revealedRoles: null,
       lastRoundResult: null,
       currentScores: null,

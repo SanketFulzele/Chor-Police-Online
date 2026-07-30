@@ -104,12 +104,12 @@ export function registerGameHandlers(io: Server) {
 
     // ========== CALL MANTRI ==========
 
-    socket.on(SocketEvents.CALL_MANTRI, ({ chosenId }: { chosenId: string }) => {
+    socket.on(SocketEvents.CALL_MANTRI, (_payload?: unknown) => {
       const ctx = getPlayerBySocketId(socket.id);
       if (!ctx) return;
 
       const { room, player } = ctx;
-      const result = callMantri(room, player, chosenId);
+      const result = callMantri(room, player);
       emitResult(room, result, io, socket);
     });
 
