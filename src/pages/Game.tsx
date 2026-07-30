@@ -648,29 +648,26 @@ export function GamePage() {
                 </Button>
               </div>
             </div>
-<<<<<<< HEAD
+          </div>
 
-            {/* Fixed tooltip for finished phase */}
-            {tooltip && (
-              <div
-                className="fixed z-[100] pointer-events-none"
-                style={{
-                  left: tooltip.rect.left + tooltip.rect.width / 2,
-                  top: tooltip.rect.top - 10,
-                  transform: "translate(-50%, -100%)",
-                }}
-              >
-                <div className="bg-gray-900/95 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl border border-white/[0.12] backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150">
-                  <div className="text-center text-text-muted text-[10px] mb-0.5 tracking-wide">Game {tooltip.round}</div>
-                  <div className="flex items-center gap-1.5">
-                    <span>{ROLE_EMOJIS[tooltip.role]} {ROLE_LABELS[tooltip.role]}</span>
-                  </div>
+          {/* Fixed tooltip for finished phase */}
+          {tooltip && (
+            <div
+              className="fixed z-[100] pointer-events-none"
+              style={{
+                left: tooltip.rect.left + tooltip.rect.width / 2,
+                top: tooltip.rect.top - 10,
+                transform: "translate(-50%, -100%)",
+              }}
+            >
+              <div className="bg-gray-900/95 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl border border-white/[0.12] backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150">
+                <div className="text-center text-text-muted text-[10px] mb-0.5 tracking-wide">Game {tooltip.round}</div>
+                <div className="flex items-center gap-1.5">
+                  <span>{ROLE_EMOJIS[tooltip.role]} {ROLE_LABELS[tooltip.role]}</span>
                 </div>
               </div>
-            )}
-=======
->>>>>>> parent of 0ccea47 (leader board change design)
-          </div>
+            </div>
+          )}
           );
         })()}
 
