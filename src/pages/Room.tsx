@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useSocketStore } from "../store/socketStore";
-import { useSocket } from "../hooks/useSocket";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { useRoom } from "../hooks/useRoom";
@@ -15,8 +14,6 @@ export function Room() {
   const status = useSocketStore((s) => s.status);
   const [copied, setCopied] = useState(false);
   const [starting, setStarting] = useState(false);
-
-  useSocket();
 
   useEffect(() => {
     if (!room && status === "connected") {

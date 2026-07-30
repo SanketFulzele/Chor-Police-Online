@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { io } from "socket.io-client";
 import { useSocketStore } from "../store/socketStore";
 import { useRoomStore } from "../store/roomStore";
 import { SocketEvents } from "../../shared/socket/events";
+import type { Room } from "../types";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -13,16 +14,16 @@ if (!SERVER_URL) {
   );
 }
 
+let socketCreated = false;
+
 export function useSocket() {
   const socket = useSocketStore((s) => s.socket);
   const setSocket = useSocketStore((s) => s.setSocket);
   const setStatus = useSocketStore((s) => s.setStatus);
-  const setRoom = useRoomStore((s) => s.setRoom);
-  const initialized = useRef(false);
 
   useEffect(() => {
-    if (initialized.current || socket?.connected) return;
-    initialized.current = true;
+    if (socket?.connected || socketCreated) return;
+    socketCreated = true;
 
     setStatus("connecting");
 
@@ -46,8 +47,8 @@ export function useSocket() {
       setStatus("disconnected");
     });
 
-    newSocket.on(SocketEvents.ROOM_UPDATED, ({ room }) => {
-      setRoom(room);
+    newSocket.on(SocketEvents.ROOM_UPDATED, ({ room }: { room: Room }) => {
+      useRoomStore.getState().setRoom(room);
     });
 
     newSocket.on(SocketEvents.ROOM_DESTROYED, () => {
@@ -57,11 +58,9 @@ export function useSocket() {
     setSocket(newSocket);
 
     return () => {
-      newSocket.off("connect");
-      newSocket.off("disconnect");
-      newSocket.off("connect_error");
-      newSocket.off(SocketEvents.ROOM_UPDATED);
-      newSocket.off(SocketEvents.ROOM_DESTROYED);
+      newSocket.removeAllListeners();
+      newSocket.disconnect();
+      socketCreated = false;
     };
-  }, [setSocket, setStatus, setRoom, socket?.connected]);
+  }, [setSocket, setStatus]);
 }
