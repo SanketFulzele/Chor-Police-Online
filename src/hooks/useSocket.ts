@@ -4,7 +4,14 @@ import { useSocketStore } from "../store/socketStore";
 import { useRoomStore } from "../store/roomStore";
 import { SocketEvents } from "../../shared/socket/events";
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3001";
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+
+if (!SERVER_URL) {
+  throw new Error(
+    "[useSocket] VITE_SERVER_URL environment variable is not configured. " +
+    "Set it in .env or in your deployment environment variables."
+  );
+}
 
 export function useSocket() {
   const socket = useSocketStore((s) => s.socket);

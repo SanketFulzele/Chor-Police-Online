@@ -18,14 +18,18 @@ import { SocketEvents } from "../shared/socket/events.js";
 
 const app = express();
 const httpServer = createServer(app);
+const ALLOWED_ORIGINS = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(",").map((s) => s.trim())
+  : ["http://localhost:5173", "https://chor-police-game-online.vercel.app"];
+
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
   },
 });
 
-app.use(cors());
+app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
