@@ -1,7 +1,7 @@
 import type { GameRole } from "../types";
 import type { RoleDistribution, RoleHistory } from "./types";
 
-const ROLES: GameRole[] = ["raja", "mantri", "chor", "daku"];
+const ROLES: GameRole[] = ["raja", "mantri", "chor", "police"];
 
 /**
  * Deficit-based fair role rotation.

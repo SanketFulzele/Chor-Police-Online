@@ -9,7 +9,7 @@ import { SocketEvents } from "../../shared/socket/events";
 
 export function Room() {
   const navigate = useNavigate();
-  const { room, myPlayer, isHost, leaveRoom, toggleReady, startGame } =
+  const { room, myPlayer, isHost, leaveRoom, startGame } =
     useRoom();
   const status = useSocketStore((s) => s.status);
   const [copied, setCopied] = useState(false);
@@ -37,10 +37,8 @@ export function Room() {
 
   if (!room) return null;
 
-  const allReady =
-    room.players.length === 4 &&
-    room.players.every((p) => p.isReady || p.isHost);
-  const canStart = room.players.length === 4 && allReady && isHost;
+  const connectedCount = room.players.filter((p) => p.isConnected).length;
+  const canStart = connectedCount >= 4 && isHost;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(room.code).then(() => {
@@ -163,13 +161,9 @@ export function Room() {
                 {!player.isConnected && (
                   <span className="text-xs text-rose">Disconnected</span>
                 )}
-                <div
-                  className={`w-3 h-3 rounded-full ${
-                    player.isReady
-                      ? "bg-emerald shadow-sm shadow-emerald/50"
-                      : "bg-text-muted"
-                  }`}
-                />
+                {player.isConnected && (
+                  <div className="w-3 h-3 rounded-full bg-emerald shadow-sm shadow-emerald/50" />
+                )}
               </div>
             </motion.div>
           ))}
@@ -193,19 +187,6 @@ export function Room() {
         </Card>
 
         <div className="space-y-3">
-          {!isHost && (
-            <motion.div whileTap={{ scale: 0.98 }}>
-              <Button
-                variant={myPlayer?.isReady ? "secondary" : "gold"}
-                size="lg"
-                fullWidth
-                onClick={toggleReady}
-              >
-                {myPlayer?.isReady ? "Not Ready" : "Ready"}
-              </Button>
-            </motion.div>
-          )}
-
           {isHost && (
             <Button
               variant="gold"
@@ -218,11 +199,22 @@ export function Room() {
                 ? "Starting..."
                 : canStart
                 ? "Start Game"
-                : room.players.length < 4
-                ? `Waiting for ${4 - room.players.length} more player${
-                    4 - room.players.length > 1 ? "s" : ""
-                  }`
-                : "Waiting for all players to be ready"}
+                : connectedCount < 4
+                ? `${connectedCount}/4 Players Connected — Waiting for ${4 - connectedCount} more...`
+                : "Waiting for all players to connect"}
+            </Button>
+          )}
+
+          {!isHost && (
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
+              disabled
+            >
+              {connectedCount < 4
+                ? `${connectedCount}/4 Players Connected — Waiting for ${4 - connectedCount} more...`
+                : "Waiting for Host to start the game..."}
             </Button>
           )}
 

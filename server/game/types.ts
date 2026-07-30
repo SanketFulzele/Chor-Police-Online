@@ -2,17 +2,11 @@ import type { GameRole } from "../shared/socket/types.js";
 
 export type GamePhase =
   | "waiting"
-  | "shuffling"
-  | "card-distribution"
-  | "card-reveal"
-  | "card-hidden"
-  | "waiting-raja"
-  | "raja-calling"
-  | "mantri-reveal"
-  | "guessing"
-  | "reveal-roles"
-  | "score-update"
-  | "leaderboard"
+  | "role-assignment"
+  | "reveal-raja"
+  | "reveal-mantri"
+  | "police-selection"
+  | "reveal-result"
   | "finished";
 
 export interface PhaseTransition {
@@ -45,8 +39,6 @@ export interface GamePlayer {
   id: string;
   name: string;
   role: GameRole | null;
-  hasRevealed: boolean;
-  hasHidden: boolean;
   isConnected: boolean;
 }
 
@@ -78,7 +70,6 @@ export interface LeaderboardEntry {
 }
 
 export interface ScoreInput {
-  mantriId: string;
   chosenId: string;
   roles: Record<string, GameRole>;
 }

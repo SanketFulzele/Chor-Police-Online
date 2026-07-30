@@ -8,16 +8,10 @@ import type {
 } from "../game/gameEngine";
 import {
   startGame,
-  revealCard,
-  hideCard,
-  callMantri,
-  submitGuess,
-  nextRound,
+  policeSelect,
   advanceToPhase,
   endGame,
 } from "../game/gameEngine.js";
-
-// ---- Emit helper ----
 
 function emitResult(room: Room, result: EngineResult, io: Server, errorSocket?: { emit: (event: string, data: unknown) => void }) {
   if (!result.ok) {
@@ -64,12 +58,8 @@ function scheduleOrApply(room: Room, se: ScheduledEvent, io: Server) {
   }
 }
 
-// ---- Game event handler ----
-
 export function registerGameHandlers(io: Server) {
   io.on("connection", (socket) => {
-
-    // ========== START GAME ==========
 
     socket.on(SocketEvents.START_GAME, () => {
       const ctx = getPlayerBySocketId(socket.id);
@@ -80,62 +70,14 @@ export function registerGameHandlers(io: Server) {
       emitResult(room, result, io, socket);
     });
 
-    // ========== REVEAL CARD ==========
-
-    socket.on(SocketEvents.REVEAL_CARD, () => {
+    socket.on(SocketEvents.POLICE_SELECT, ({ chosenId }: { chosenId: string }) => {
       const ctx = getPlayerBySocketId(socket.id);
       if (!ctx) return;
 
       const { room, player } = ctx;
-      const result = revealCard(room, player);
+      const result = policeSelect(room, player, chosenId);
       emitResult(room, result, io, socket);
     });
-
-    // ========== HIDE CARD ==========
-
-    socket.on(SocketEvents.HIDE_CARD, () => {
-      const ctx = getPlayerBySocketId(socket.id);
-      if (!ctx) return;
-
-      const { room, player } = ctx;
-      const result = hideCard(room, player);
-      emitResult(room, result, io, socket);
-    });
-
-    // ========== CALL MANTRI ==========
-
-    socket.on(SocketEvents.CALL_MANTRI, ({ chosenId }: { chosenId: string }) => {
-      const ctx = getPlayerBySocketId(socket.id);
-      if (!ctx) return;
-
-      const { room, player } = ctx;
-      const result = callMantri(room, player, chosenId);
-      emitResult(room, result, io, socket);
-    });
-
-    // ========== SUBMIT GUESS ==========
-
-    socket.on(SocketEvents.SUBMIT_GUESS, ({ chosenId }: { chosenId: string }) => {
-      const ctx = getPlayerBySocketId(socket.id);
-      if (!ctx) return;
-
-      const { room, player } = ctx;
-      const result = submitGuess(room, player, chosenId);
-      emitResult(room, result, io, socket);
-    });
-
-    // ========== NEXT ROUND ==========
-
-    socket.on(SocketEvents.NEXT_ROUND, () => {
-      const ctx = getPlayerBySocketId(socket.id);
-      if (!ctx) return;
-
-      const { room, player } = ctx;
-      const result = nextRound(room, player);
-      emitResult(room, result, io, socket);
-    });
-
-    // ========== END GAME ==========
 
     socket.on(SocketEvents.END_GAME, () => {
       const ctx = getPlayerBySocketId(socket.id);

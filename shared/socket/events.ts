@@ -9,38 +9,17 @@ export const SocketEvents = {
   ROOM_DESTROYED: "room-destroyed",
   HOST_CHANGED: "host-changed",
 
-  // Player readiness
-  PLAYER_READY: "player-ready",
-  PLAYER_UNREADY: "player-unready",
-
   // Game lifecycle
   START_GAME: "start-game",
   GAME_STARTING: "game-starting",
   CARDS_DISTRIBUTED: "cards-distributed",
   PHASE_CHANGED: "phase-changed",
 
-  // Card reveal / hide
-  REVEAL_CARD: "reveal-card",
-  HIDE_CARD: "hide-card",
-  CARD_REVEALED: "card-revealed",
-  CARD_HIDDEN: "card-hidden",
+  // Police selection
+  POLICE_SELECT: "police-select",
+  POLICE_SELECTED: "police-selected",
 
-  // Raja / Mantri phase
-  CALL_MANTRI: "call-mantri",
-  MANTRI_CALLED: "mantri-called",
-  MANTRI_REVEALED: "mantri-revealed",
-
-  // Guessing
-  SUBMIT_GUESS: "submit-guess",
-  GUESS_SUBMITTED: "guess-submitted",
-
-  // Round result / scoring
-  ROLES_REVEALED: "roles-revealed",
-  ROUND_RESULT: "round-result",
-  SCORE_UPDATED: "score-updated",
-  LEADERBOARD_UPDATED: "leaderboard-updated",
-  NEXT_ROUND: "next-round",
-  NEXT_ROUND_STARTED: "next-round-started",
+  // End game
   END_GAME: "end-game",
   GAME_OVER: "game-over",
 
