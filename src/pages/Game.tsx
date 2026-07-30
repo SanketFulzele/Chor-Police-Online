@@ -233,8 +233,7 @@ export function GamePage() {
 
             {myRole === "mantri" && phase === "guessing" && (
               <Button
-                variant="ghost"
-                className="w-full mt-3 border border-purple-500/30 text-purple-300 hover:bg-purple-500/10"
+                className="w-full gold-gradient text-black font-bold mt-3"
                 onClick={() => {
                   const modal = document.getElementById("mantri-modal");
                   if (modal) modal.classList.remove("hidden");
