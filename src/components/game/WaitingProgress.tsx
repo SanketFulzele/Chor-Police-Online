@@ -15,16 +15,24 @@ export function WaitingProgress({ players, revealedIds, hiddenIds }: WaitingProg
         return (
           <div
             key={p.id}
-            className="flex items-center justify-between px-4 py-2 rounded-lg bg-gray-800/60"
+            className="flex items-center justify-between rounded-lg border border-white/[0.07] bg-white/[0.03] px-4 py-2"
           >
-            <span className="text-sm font-medium">{p.name}</span>
+            <span className="flex items-center gap-2 text-sm font-medium text-text-primary">
+              <span
+                className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white ring-1 ring-white/10"
+                style={{ backgroundColor: p.avatarColor }}
+              >
+                {p.name.charAt(0).toUpperCase()}
+              </span>
+              {p.name}
+            </span>
             <span className="text-xs">
               {hidden ? (
-                <span className="text-green-400">Hidden ✓</span>
+                <span className="text-emerald">Hidden</span>
               ) : revealed ? (
-                <span className="text-yellow-400">Revealed</span>
+                <span className="text-gold">Revealed</span>
               ) : (
-                <span className="text-gray-500">Waiting...</span>
+                <span className="text-text-muted">Waiting...</span>
               )}
             </span>
           </div>

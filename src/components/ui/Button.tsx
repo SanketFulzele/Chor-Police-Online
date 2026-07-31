@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 interface ButtonProps {
   children: ReactNode;
   onClick?: () => void;
-  variant?: "primary" | "secondary" | "ghost" | "gold" | "gold-gradient";
+  variant?: "primary" | "secondary" | "ghost" | "gold" | "gold-gradient" | "outline-gold" | "royal-glow";
   size?: "sm" | "md" | "lg";
   disabled?: boolean;
   fullWidth?: boolean;
@@ -23,6 +23,10 @@ const variantClasses = {
     "bg-gold hover:bg-gold-light text-black font-bold border-gold shadow-lg shadow-gold/20",
   "gold-gradient":
     "bg-gradient-to-b from-gold-light via-gold to-gold-dark text-black font-bold border-gold shadow-[0_10px_40px_rgba(255,215,0,0.35)] hover:shadow-[0_14px_50px_rgba(255,215,0,0.5)]",
+  "outline-gold":
+    "bg-[#0d0d24]/80 hover:bg-gold/10 text-text-primary border-gold/40 hover:border-gold/70 shadow-[0_0_18px_rgba(255,215,0,0.05)] hover:shadow-[0_0_30px_rgba(255,215,0,0.18)]",
+  "royal-glow":
+    "bg-royal/20 hover:bg-royal/40 text-royal-light border-royal/50 hover:border-royal/80 shadow-[0_0_25px_rgba(124,58,237,0.3)] hover:shadow-[0_0_40px_rgba(124,58,237,0.5)]",
 };
 
 const sizeClasses = {

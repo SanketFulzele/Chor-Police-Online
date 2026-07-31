@@ -1,12 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { RoyalPanel } from "../components/ui/RoyalPanel";
+import { PremiumBackground } from "../components/layout/PremiumBackground";
+import { RankingList } from "../components/game/victory/RankingList";
+import { IconCheck, IconHistory, IconHome, IconTrophy, IconX } from "../components/game/victory/icons";
 import { usePersistence } from "../hooks/usePersistence";
 import { RoleIcon } from "../components/game/RoleIcon";
-import { ROLE_LABELS } from "../constants/game";
+import { ROLE_COLORS, ROLE_LABELS } from "../constants/game";
 import type { StoredGame } from "../types";
+
+const AVATAR_PALETTE = ["#7c3aed", "#2563eb", "#db2777", "#ea580c", "#0d9488", "#ca8a04"];
 
 export function History() {
   const navigate = useNavigate();
@@ -19,29 +24,62 @@ export function History() {
     setGames([]);
   }
 
+  const standings = selectedGame
+    ? [...selectedGame.players]
+        .sort((a, b) => b.score - a.score)
+        .map((p, i) => ({
+          id: p.id,
+          name: p.name,
+          avatarColor: AVATAR_PALETTE[i % AVATAR_PALETTE.length],
+          total: p.score,
+        }))
+    : [];
+
   return (
-    <div className="flex-1 flex flex-col items-center px-4 py-8">
-      <div className="w-full max-w-lg space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold gold-gradient">Game History</h2>
-          <div className="flex gap-2">
+    <div className="relative flex-1 flex flex-col items-center px-4 py-8">
+      <PremiumBackground />
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="w-full max-w-lg space-y-6"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gold/30 bg-gold/10 text-gold">
+                <IconTrophy className="h-5 w-5" />
+              </span>
+              <h2 className="text-2xl font-black tracking-wide gold-gradient">Game History</h2>
+            </div>
+            <p className="mt-1 text-xs text-text-muted">Royal records of every game played</p>
+          </div>
+          <div className="flex shrink-0 gap-2">
             {games.length > 0 && (
               <Button variant="ghost" size="sm" onClick={handleClear}>
                 Clear
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-              Back
+            <Button variant="outline-gold" size="sm" onClick={() => navigate("/")}>
+              <span className="inline-flex items-center gap-1.5">
+                <IconHome className="h-3.5 w-3.5" />
+                Back
+              </span>
             </Button>
           </div>
         </div>
 
         {games.length === 0 && (
-          <Card>
-            <p className="text-text-muted text-center py-8">
-              No games played yet. Start a game to see history here!
-            </p>
-          </Card>
+          <RoyalPanel decorativeCorners className="px-6 py-10">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/30 bg-gold/10 text-gold">
+                <IconHistory className="h-6 w-6" />
+              </span>
+              <p className="font-bold text-text-primary">No games played yet</p>
+              <p className="text-sm text-text-muted">Start a game to see history here!</p>
+            </div>
+          </RoyalPanel>
         )}
 
         <AnimatePresence>
@@ -56,65 +94,79 @@ export function History() {
               <button
                 type="button"
                 onClick={() => setSelectedGame(null)}
-                className="text-sm text-gold hover:underline cursor-pointer"
+                className="inline-flex cursor-pointer items-center gap-1.5 text-sm text-gold transition-colors hover:text-gold-light hover:underline"
               >
-                ← Back to list
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to list
               </button>
 
-              <Card>
-                <p className="text-2xl mb-1">🏆 {selectedGame.winnerName}</p>
-                <p className="text-text-muted text-xs mb-4">
-                  {new Date(selectedGame.date).toLocaleDateString()} &middot; {selectedGame.roundsPlayed} rounds
-                </p>
-                <div className="space-y-2">
-                  {selectedGame.players
-                    .sort((a, b) => b.score - a.score)
-                    .map((p, i) => (
-                      <div
-                        key={p.id}
-                        className="flex items-center justify-between glass rounded-xl px-4 py-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm w-6">
-                            {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
-                          </span>
-                          <span className="text-sm font-medium">{p.name}</span>
-                          {p.id === selectedGame.winnerId && (
-                            <span className="text-xs text-gold">👑</span>
-                          )}
-                        </div>
-                        <span className="font-mono text-sm">{p.score}</span>
-                      </div>
-                    ))}
+              <RoyalPanel decorativeCorners className="p-5 sm:p-6">
+                <div className="text-center">
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.15, type: "spring", stiffness: 260, damping: 16 }}
+                    className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-gold/40 bg-gold/15 text-gold shadow-[0_0_25px_rgba(255,215,0,0.25)]"
+                  >
+                    <IconTrophy className="h-6 w-6" />
+                  </motion.span>
+                  <p className="mt-3 text-xl font-black tracking-wide gold-gradient">{selectedGame.winnerName}</p>
+                  <p className="mt-1 text-xs text-text-muted">
+                    {new Date(selectedGame.date).toLocaleDateString()} &middot; {selectedGame.roundsPlayed} rounds
+                  </p>
                 </div>
-              </Card>
+                <div className="mt-6">
+                  <RankingList players={standings} playerId={null} />
+                </div>
+              </RoyalPanel>
 
               {selectedGame.roundHistory.length > 0 && (
-                <Card>
-                  <p className="text-sm font-semibold mb-3">Round Details</p>
-                  <div className="space-y-2">
+                <RoyalPanel className="p-5 sm:p-6">
+                  <p className="mb-4 text-base font-bold gold-gradient">Round Details</p>
+                  <div className="space-y-3">
                     {selectedGame.roundHistory.map((r) => (
-                      <div key={r.round} className="glass rounded-xl px-4 py-2 text-xs text-left">
-                        <p className="font-medium mb-1">Round {r.round}</p>
-                        <div className="text-text-muted space-y-0.5">
+                      <div key={r.round} className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-left text-xs">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <p className="font-bold text-text-primary">Round {r.round}</p>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold ${
+                              r.correct ? "bg-emerald/15 text-emerald" : "bg-rose/15 text-rose-400"
+                            }`}
+                          >
+                            {r.correct ? <IconCheck className="h-3 w-3" /> : <IconX className="h-3 w-3" />}
+                            {r.correct ? "Correct" : "Wrong"}
+                          </span>
+                        </div>
+                        <div className="space-y-1.5 text-text-secondary">
                           {Object.entries(r.roles).map(([pid, role]) => {
                             const player = selectedGame.players.find((p) => p.id === pid);
+                            const points = r.scores?.[pid] ?? 0;
                             return (
-                              <span key={pid} className="block flex items-center gap-1">
-                                <RoleIcon role={role} className="w-4 h-4" /> {player?.name ?? pid}: {ROLE_LABELS[role]}
-                                {r.mantriId === pid && " (Mantri)"}
-                                {r.chosenId === pid && " ← Chosen"}
-                              </span>
+                              <div key={pid} className="flex items-center justify-between gap-2">
+                                <span className="flex min-w-0 items-center gap-1.5">
+                                  <RoleIcon role={role} className="h-4 w-4 shrink-0" />
+                                  <span className="truncate font-medium text-text-primary">{player?.name ?? pid}</span>
+                                  <span style={{ color: ROLE_COLORS[role] }} className="shrink-0 font-semibold">
+                                    {ROLE_LABELS[role]}
+                                  </span>
+                                  {r.mantriId === pid && (
+                                    <span className="shrink-0 font-medium text-purple-400">· Mantri</span>
+                                  )}
+                                  {r.chosenId === pid && <span className="shrink-0 font-medium text-rose-400">· Chosen</span>}
+                                </span>
+                                <span className="shrink-0 font-mono font-bold text-emerald-400">
+                                  {points > 0 ? `+${points}` : ""}
+                                </span>
+                              </div>
                             );
                           })}
-                          <p className={r.correct ? "text-emerald mt-1" : "text-rose mt-1"}>
-                            {r.correct ? "✓ Correct guess" : "✗ Wrong guess"}
-                          </p>
                         </div>
                       </div>
                     ))}
                   </div>
-                </Card>
+                </RoyalPanel>
               )}
             </motion.div>
           ) : (
@@ -123,27 +175,29 @@ export function History() {
                 <motion.div
                   key={game.id}
                   layoutId={game.id}
-                  className="glass rounded-xl px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors"
+                  className="group cursor-pointer rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 transition-all duration-300 hover:border-gold/30 hover:bg-white/[0.05] hover:shadow-[0_0_25px_rgba(255,215,0,0.07)]"
                   onClick={() => setSelectedGame(game)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">
-                        🏆 {game.winnerName}
-                      </p>
-                      <p className="text-xs text-text-muted">
-                        {new Date(game.date).toLocaleDateString()} &middot; {game.roundsPlayed} rounds
-                      </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gold/25 bg-gold/10 text-gold">
+                        <IconTrophy className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-text-primary">{game.winnerName}</p>
+                        <p className="text-xs text-text-muted">
+                          {new Date(game.date).toLocaleDateString()} &middot; {game.roundsPlayed} rounds
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-xs text-gold">{game.players.length} players</span>
+                    <span className="shrink-0 rounded-full border border-gold/25 bg-gold/[0.06] px-2.5 py-0.5 text-[11px] font-bold text-gold/90">
+                      {game.players.length} players
+                    </span>
                   </div>
-                  <div className="flex gap-2 mt-2 flex-wrap">
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {game.players.map((p) => (
-                      <span
-                        key={p.id}
-                        className="text-xs bg-white/5 rounded-full px-2 py-0.5"
-                      >
-                        {p.name} ({p.score})
+                      <span key={p.id} className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-text-secondary">
+                        {p.name} <span className="font-mono font-bold text-gold/80">{p.score}</span>
                       </span>
                     ))}
                   </div>
@@ -152,7 +206,7 @@ export function History() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </div>
   );
 }
