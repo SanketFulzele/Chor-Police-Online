@@ -18,19 +18,38 @@ import { SocketEvents } from "../shared/socket/events.js";
 
 const app = express();
 const httpServer = createServer(app);
-const ALLOWED_ORIGINS = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(",").map((s) => s.trim())
-  : ["http://localhost:5173", "https://chor-police-game-online.vercel.app"];
 
 const io = new Server(httpServer, {
   cors: {
-    origin: ALLOWED_ORIGINS,
+    // Reflect the request origin. A public multiplayer game with no cookies or
+    // credentials must work from any deployed frontend (Vercel production URL,
+    // preview deployments, custom domains, local dev) — a hardcoded allowlist
+    // silently 403s the Socket.IO handshake on mismatch. `origin: true` echoes
+    // the client's Origin so nothing is ever blocked by the frontend hostname.
+    origin: true,
     methods: ["GET", "POST"],
   },
+  // Mobile carriers and aggressive proxies sometimes mishandle compressed
+  // WebSocket frames. Payloads here are tiny JSON, so disable per-message
+  // deflate for maximum transport compatibility.
+  perMessageDeflate: false,
+  // Heartbeat tuned for slow / lossy mobile networks: server waits for the
+  // pong a little longer before declaring the client dead.
+  pingInterval: 25000,
+  pingTimeout: 25000,
 });
 
-app.use(cors({ origin: ALLOWED_ORIGINS }));
+app.use(cors({ origin: true }));
 app.use(express.json());
+
+// Log engine-level connection failures (CORS rejections, aborted handshakes)
+// so production issues are never silent.
+io.engine.on("connection_error", (err) => {
+  const reqDesc = err.context && "req" in err.context
+    ? ` ${err.context.req.method} ${err.context.req.url}`
+    : "";
+  console.error(`[engine] connection_error code=${err.code} message=${err.message}${reqDesc}`);
+});
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -43,7 +62,10 @@ function broadcastRoom(roomCode: string) {
   io.to(roomCode).emit(SocketEvents.ROOM_UPDATED, { room });
 }
 
-const GRACE_PERIOD_MS = 30_000;
+// Give mobile clients a generous grace window to come back after a network
+// handover (4G <-> Wi-Fi switching, tunnels, lifts) before being marked
+// disconnected. The RECONNECT event cancels this timer if the player returns.
+const GRACE_PERIOD_MS = 60_000;
 const disconnectTimers = new Map<string, NodeJS.Timeout>();
 
 io.on("connection", (socket) => {

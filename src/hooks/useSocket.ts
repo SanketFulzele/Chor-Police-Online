@@ -9,10 +9,36 @@ import { loadSession, clearSession } from "../utils/session";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
+function isLocalOrPrivateUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return true;
+    if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "::1") return true;
+    if (host.startsWith("192.168.") || host.startsWith("10.") || host.startsWith("169.254.")) return true;
+    if (host.startsWith("172.")) {
+      const second = Number(host.split(".")[1]);
+      if (second >= 16 && second <= 31) return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 if (!SERVER_URL) {
   throw new Error(
     "[useSocket] VITE_SERVER_URL environment variable is not configured. " +
-    "Set it in .env or in your deployment environment variables."
+    "Set it in your Vercel project settings (Production + Preview) to the deployed " +
+    "backend URL (e.g. https://your-backend.onrender.com) and rebuild."
+  );
+}
+
+if (import.meta.env.PROD && isLocalOrPrivateUrl(SERVER_URL)) {
+  throw new Error(
+    `[useSocket] VITE_SERVER_URL points to a local/private address (${SERVER_URL}) in a production build. ` +
+    "Set VITE_SERVER_URL to your deployed backend URL in the Vercel environment variables and rebuild. " +
+    "Players on other networks can never reach localhost / LAN addresses."
   );
 }
 
@@ -20,7 +46,9 @@ let socketCreated = false;
 
 function reconstructGameState(room: Room, myRole?: GameRole) {
   const gameStore = useGameStore.getState();
+  const playerId = useRoomStore.getState().playerId;
 
+  gameStore.setShuffling(false);
   gameStore.setPhase(room.phase);
   gameStore.setRound(room.round);
   if (myRole) gameStore.setMyRole(myRole);
@@ -28,11 +56,17 @@ function reconstructGameState(room: Room, myRole?: GameRole) {
 
   const scores: Record<string, number> = {};
   const totals: Record<string, number> = {};
+  let me: Room["players"][number] | undefined;
   for (const p of room.players) {
     scores[p.id] = p.currentScore;
     totals[p.id] = p.totalScore;
     if (p.hasRevealed) gameStore.addRevealedPlayer(p.id);
     if (p.hasHidden) gameStore.addHiddenPlayer(p.id);
+    if (p.id === playerId) me = p;
+  }
+  if (me) {
+    gameStore.setHasRevealed(me.hasRevealed);
+    gameStore.setHasHidden(me.hasHidden);
   }
   gameStore.setCurrentScores(scores);
   gameStore.setCurrentTotals(totals);
@@ -67,11 +101,31 @@ export function useSocket() {
     setStatus("connecting");
 
     const newSocket = io(SERVER_URL, {
-      transports: ["websocket", "polling"],
+      // Polling-first. Plain HTTPS long-polling works on every network (mobile
+      // carriers, carrier NATs, restrictive proxies); the connection then
+      // transparently upgrades to WebSocket when the network allows it. A
+      // websocket-first config fails on networks that block the upgrade
+      // handshake, which is the classic "works on Wi-Fi, fails on 4G/5G" cause.
+      transports: ["polling", "websocket"],
+      upgrade: true,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionDelayMax: 10000,
+      randomizationFactor: 0.5,
+      // Generous initial timeout so Render cold starts (after idle spin-down)
+      // do not fail the very first connection attempt.
+      timeout: 30000,
+    });
+
+    newSocket.io.on("reconnect_attempt", (attempt: number) => {
+      console.log(`[socket] reconnect attempt #${attempt} -> ${SERVER_URL}`);
+    });
+    newSocket.io.on("reconnect_error", (err: Error) => {
+      console.error(`[socket] reconnect_error: ${err.message}`);
+    });
+    newSocket.io.on("error", (err: Error) => {
+      console.error(`[socket] manager error: ${err.message}`);
     });
 
     newSocket.on("connect", () => {
@@ -104,8 +158,12 @@ export function useSocket() {
       setStatus("disconnected");
     });
 
-    newSocket.on("connect_error", () => {
-      console.log(`[socket] connect_error id=${newSocket.id}`);
+    newSocket.on("connect_error", (rawErr: Error) => {
+      const err = rawErr as Error & { description?: string; context?: unknown };
+      console.error(
+        `[socket] connect_error: ${err.message}${err.description ? ` — ${err.description}` : ""}`,
+        err.context ?? ""
+      );
       setStatus("disconnected");
     });
 
