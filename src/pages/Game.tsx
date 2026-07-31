@@ -12,6 +12,7 @@ import { GameCard } from "../components/game/Card";
 import { PlayerList } from "../components/game/PlayerList";
 import { ShuffleAnimation } from "../components/game/ShuffleAnimation";
 import { IdentifyChorModal } from "../components/game/IdentifyChorModal";
+import { RoundResultPopup } from "../components/game/RoundResultPopup";
 import { VictoryScreen } from "../components/game/victory/VictoryScreen";
 import { RankingList } from "../components/game/victory/RankingList";
 import { ScoreTable } from "../components/game/victory/ScoreTable";
@@ -47,6 +48,7 @@ export function GamePage() {
 
   const isHost = room?.hostId === playerId;
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (!room) {
@@ -117,21 +119,17 @@ export function GamePage() {
     (p) => p.publicRole !== "raja" && p.publicRole !== "mantri" && p.id !== playerId
   );
 
-  const handleConfirmGuess = () => {
-    if (selectedPlayer) {
-      submitGuess(selectedPlayer);
-      setSelectedPlayer(null);
-    }
-  };
-
   const handleCancelGuess = () => {
-    document.getElementById("mantri-modal")?.classList.add("hidden");
+    setModalOpen(false);
     setSelectedPlayer(null);
   };
 
   const handleConfirmChor = () => {
-    handleConfirmGuess();
-    document.getElementById("mantri-modal")?.classList.add("hidden");
+    if (selectedPlayer) {
+      submitGuess(selectedPlayer);
+      setModalOpen(false);
+      setSelectedPlayer(null);
+    }
   };
 
   const isGameplayPhase = phase && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase);
@@ -226,10 +224,7 @@ export function GamePage() {
               {myRole === "mantri" && phase === "guessing" && (
                 <Button
                   className="mt-4 w-full gold-gradient text-black font-bold"
-                  onClick={() => {
-                    const modal = document.getElementById("mantri-modal");
-                    if (modal) modal.classList.remove("hidden");
-                  }}
+                  onClick={() => setModalOpen(true)}
                 >
                   Identify the Chor
                 </Button>
@@ -298,6 +293,7 @@ export function GamePage() {
 
         {/* Mantri popup modal */}
         <IdentifyChorModal
+          open={modalOpen}
           hiddenPlayers={hiddenPlayers}
           selectedPlayerId={selectedPlayer}
           onSelect={(id) => setSelectedPlayer(id)}
@@ -305,21 +301,8 @@ export function GamePage() {
           onCancel={handleCancelGuess}
         />
 
-        {/* Result toast */}
-        {showResult && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-lg text-lg font-bold ${
-              showResult.isCorrect
-                ? "bg-emerald/90 text-white"
-                : "bg-rose/90 text-white"
-            }`}
-          >
-            {showResult.isCorrect ? "✅ Correct Answer" : "❌ Wrong Answer"}
-          </motion.div>
-        )}
+        {/* Result popup */}
+        <RoundResultPopup showResult={showResult} />
 
 
 

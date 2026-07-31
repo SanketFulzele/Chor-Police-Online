@@ -34,6 +34,8 @@ export function useGame() {
       resetRound();
       setShuffling(true);
       setPhase("shuffling");
+      const currentRoom = useRoomStore.getState().room;
+      if (currentRoom) setRound(currentRoom.round);
     };
 
     const handleCardsDistributed = (payload: { role?: string; phase?: string }) => {
@@ -132,6 +134,7 @@ export function useGame() {
     const handleRoomUpdated = () => {
       const currentRoom = useRoomStore.getState().room;
       if (currentRoom?.phase) setPhase(currentRoom.phase);
+      if (currentRoom) setRound(currentRoom.round);
     };
 
     socket.on(SocketEvents.GAME_STARTING, handleGameStarting);

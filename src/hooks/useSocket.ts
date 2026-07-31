@@ -110,8 +110,9 @@ export function useSocket() {
     });
 
     newSocket.on(SocketEvents.ROOM_UPDATED, ({ room }: { room: Room }) => {
-      console.log(`[socket] ROOM_UPDATED room=${room.code} players=${room.players.length} phase=${room.phase}`);
+      console.log(`[socket] ROOM_UPDATED room=${room.code} players=${room.players.length} phase=${room.phase} round=${room.round}`);
       useRoomStore.getState().setRoom(room);
+      useGameStore.getState().setRound(room.round);
     });
 
     newSocket.on(SocketEvents.ROOM_DESTROYED, () => {
