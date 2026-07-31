@@ -72,6 +72,7 @@ export function Room() {
   const { room, myPlayer, isHost, leaveRoom, toggleReady, startGame } =
     useRoom();
   const status = useSocketStore((s) => s.status);
+  const socket = useSocketStore((s) => s.socket);
   const [copied, setCopied] = useState(false);
   const [starting, setStarting] = useState(false);
 
@@ -93,7 +94,6 @@ export function Room() {
   }, [room, status, navigate]);
 
   useEffect(() => {
-    const socket = useSocketStore.getState().socket;
     if (!socket) return;
 
     const handleGameStarting = () => {
@@ -104,7 +104,7 @@ export function Room() {
     return () => {
       socket.off(SocketEvents.GAME_STARTING, handleGameStarting);
     };
-  }, [navigate]);
+  }, [socket, navigate]);
 
   if (!room) return null;
 
