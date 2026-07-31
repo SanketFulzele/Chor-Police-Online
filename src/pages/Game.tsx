@@ -4,12 +4,16 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { RoyalPanel } from "../components/ui/RoyalPanel";
+import { CrownIcon } from "../components/ui/CrownIcon";
+import { PremiumBackground } from "../components/layout/PremiumBackground";
 import { useRoomStore } from "../store/roomStore";
 import { useGameStore } from "../store/gameStore";
 import { useGame } from "../hooks/useGame";
 import { GameCard } from "../components/game/Card";
 import { ShuffleAnimation } from "../components/game/ShuffleAnimation";
 import { RoleIcon } from "../components/game/RoleIcon";
+import { IdentifyChorModal } from "../components/game/IdentifyChorModal";
 import { ROLE_LABELS, ROLE_COLORS } from "../constants/game";
 import { usePersistence } from "../hooks/usePersistence";
 import { loadSession, clearSession } from "../utils/session";
@@ -117,60 +121,103 @@ export function GamePage() {
     }
   };
 
+  const handleCancelGuess = () => {
+    document.getElementById("mantri-modal")?.classList.add("hidden");
+    setSelectedPlayer(null);
+  };
+
+  const handleConfirmChor = () => {
+    handleConfirmGuess();
+    document.getElementById("mantri-modal")?.classList.add("hidden");
+  };
+
   const isGameplayPhase = phase && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+    <div className="relative flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <PremiumBackground />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className={`w-full space-y-6 text-center ${phase === "leaderboard" || phase === "finished" ? "max-w-5xl" : "max-w-lg"}`}
       >
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold gold-gradient">
-            {phase === "shuffling" && "Shuffling Cards..."}
-            {phase === "card-distribution" && "Cards Distributed"}
-            {phase === "card-reveal" && "Your Card"}
-            {phase === "leaderboard" && "Leaderboard"}
-            {phase === "finished" && "Game Over"}
-            {phase === "waiting" && "Ready to Play"}
-          </h2>
-          <p className="text-text-muted text-sm">
-            Round {round} — Room: {room.code}
-          </p>
-        </div>
+        {phase === "card-reveal" ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <div className="h-px flex-1 max-w-28 bg-gradient-to-r from-transparent to-gold/40" />
+              <CrownIcon className="w-8 h-8 text-gold drop-shadow-[0_0_14px_rgba(255,215,0,0.6)]" />
+              <div className="h-px flex-1 max-w-28 bg-gradient-to-l from-transparent to-gold/40" />
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-[0.18em] gold-gradient text-glow">
+              YOUR CARD
+            </h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gold/80 font-semibold">
+              Round {round}
+            </p>
+            <p className="text-xs text-text-muted">
+              Room Code:{" "}
+              <span className="font-mono font-bold text-gold/90 tracking-widest">{room.code}</span>
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold gold-gradient">
+              {phase === "shuffling" && "Shuffling Cards..."}
+              {phase === "card-distribution" && "Cards Distributed"}
+              {phase === "card-reveal" && "Your Card"}
+              {phase === "leaderboard" && "Leaderboard"}
+              {phase === "finished" && "Game Over"}
+              {phase === "waiting" && "Ready to Play"}
+            </h2>
+            <p className="text-text-muted text-sm">
+              Round {round} — Room: {room.code}
+            </p>
+          </div>
+        )}
 
         {/* Persistent player list during gameplay */}
         {isGameplayPhase && (
-          <div className="space-y-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {room.players.map((p) => {
               const isPublicRaja = p.publicRole === "raja";
               const isPublicMantri = p.publicRole === "mantri";
+              const isYou = p.id === playerId;
               return (
                 <div
                   key={p.id}
-                  className="glass rounded-lg px-3 py-2 flex items-center gap-2.5"
+                  className={`relative rounded-2xl border px-3.5 py-2.5 flex items-center gap-3 transition-all duration-300 ${
+                    isYou
+                      ? "border-gold/50 bg-gradient-to-br from-gold/[0.12] via-surface/80 to-transparent shadow-[0_0_25px_rgba(255,215,0,0.12)]"
+                      : "border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.05] hover:border-white/[0.12]"
+                  }`}
                 >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                    style={{ backgroundColor: p.avatarColor }}
-                  >
-                    {p.name.charAt(0).toUpperCase()}
+                  <div className="relative shrink-0">
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border ${
+                        isYou ? "border-gold/60" : "border-white/10"
+                      }`}
+                      style={{ backgroundColor: p.avatarColor }}
+                    >
+                      {p.name.charAt(0).toUpperCase()}
+                    </div>
+                    {isYou && (
+                      <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-wider bg-gold text-black px-1.5 py-px rounded-full whitespace-nowrap">
+                        You
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {p.name} {p.id === playerId && <span className="text-text-muted text-xs">(You)</span>}
-                    </p>
+                    <p className="text-sm font-semibold truncate">{p.name}</p>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0 text-xs">
+                  <div className="flex items-center gap-2 shrink-0">
                     {isPublicRaja && (
-                      <span className="font-bold text-gold flex items-center gap-1">
-                        <RoleIcon role="raja" className="w-4 h-4" /> Raja
+                      <span className="text-xs font-bold text-gold flex items-center gap-1.5">
+                        <RoleIcon role="raja" className="w-5 h-5" /> Raja
                       </span>
                     )}
                     {isPublicMantri && (
-                      <span className="font-bold text-purple-400 flex items-center gap-1">
-                        <RoleIcon role="mantri" className="w-4 h-4" /> Mantri
+                      <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+                        <RoleIcon role="mantri" className="w-5 h-5" /> Mantri
                       </span>
                     )}
                   </div>
@@ -212,98 +259,62 @@ export function GamePage() {
 
         {/* Persistent role card - always available during gameplay */}
         {myRole && phase && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase) && (
-          <Card>
-            <GameCard
-              role={myRole}
-              revealed={hasRevealed && !hasHidden}
-              onReveal={revealCard}
-              onHide={hideCard}
-            />
+          <RoyalPanel decorativeCorners className="px-5 py-8 sm:px-8">
+            <div className="space-y-6">
+              <GameCard
+                role={myRole}
+                revealed={hasRevealed && !hasHidden}
+                onReveal={revealCard}
+                onHide={hideCard}
+              />
 
-            {myRole === "raja" && hasRevealed && !hasHidden && !rajaRevealed && (
-              <p className="text-sm text-yellow-400 mt-2">
-                Raja revealed! Other players can now see who you are.
-              </p>
-            )}
+              {myRole === "raja" && hasRevealed && !hasHidden && !rajaRevealed && (
+                <p className="text-sm text-yellow-400">
+                  Raja revealed! Other players can now see who you are.
+                </p>
+              )}
 
-            {myRole === "raja" && rajaRevealed && phase === "card-reveal" && (
-              <Button
-                className="gold-gradient text-black font-bold mt-3"
-                onClick={askForMantri}
-              >
-                Ask: Who is my Mantri?
-              </Button>
-            )}
+              {myRole === "raja" && rajaRevealed && phase === "card-reveal" && (
+                <Button
+                  className="gold-gradient text-black font-bold"
+                  onClick={askForMantri}
+                >
+                  Ask: Who is my Mantri?
+                </Button>
+              )}
 
-            {myRole === "mantri" && phase === "guessing" && (
-              <Button
-                className="w-full gold-gradient text-black font-bold mt-3"
-                onClick={() => {
-                  const modal = document.getElementById("mantri-modal");
-                  if (modal) modal.classList.remove("hidden");
-                }}
-              >
-                Identify the Chor
-              </Button>
-            )}
-          </Card>
+              {myRole === "mantri" && phase === "guessing" && (
+                <Button
+                  className="w-full gold-gradient text-black font-bold"
+                  onClick={() => {
+                    const modal = document.getElementById("mantri-modal");
+                    if (modal) modal.classList.remove("hidden");
+                  }}
+                >
+                  Identify the Chor
+                </Button>
+              )}
+
+              <div className="flex items-start gap-3 rounded-2xl border border-gold/20 bg-gold/[0.04] px-4 py-3 text-left">
+                <CrownIcon className="w-5 h-5 text-gold shrink-0 mt-0.5" />
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  Keep your role a secret! Only the{" "}
+                  <span className="text-gold font-semibold">Raja</span> is revealed publicly.
+                  Click the card or use the buttons to peek and hide.
+                </p>
+              </div>
+            </div>
+          </RoyalPanel>
         )}
 
         {/* Mantri popup modal */}
-        <div
-          id="mantri-modal"
-          className="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-        >
-          <div className="glass rounded-2xl p-6 w-full max-w-sm mx-4 space-y-4">
-            <p className="text-lg font-semibold text-center">Identify the Chor</p>
-            <p className="text-sm text-text-muted text-center">
-              Select one of the remaining players
-            </p>
-            <div className="space-y-2">
-              {hiddenPlayers.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setSelectedPlayer(p.id)}
-                  className={`w-full glass rounded-xl px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer ${
-                    selectedPlayer === p.id ? "ring-2 ring-gold bg-white/10" : "hover:bg-white/10"
-                  }`}
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
-                    style={{ backgroundColor: p.avatarColor }}
-                  >
-                    {p.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="font-medium">{p.name}</span>
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  document.getElementById("mantri-modal")?.classList.add("hidden");
-                  setSelectedPlayer(null);
-                }}
-                className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-medium transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={!selectedPlayer}
-                onClick={() => {
-                  handleConfirmGuess();
-                  document.getElementById("mantri-modal")?.classList.add("hidden");
-                }}
-                className="flex-1 px-4 py-2.5 bg-gold text-black hover:bg-gold/90 rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
+        <IdentifyChorModal
+          hiddenPlayers={hiddenPlayers}
+          selectedPlayerId={selectedPlayer}
+          onSelect={(id) => setSelectedPlayer(id)}
+          onConfirm={handleConfirmChor}
+          onCancel={handleCancelGuess}
+        />
 
         {/* Result toast */}
         {showResult && (

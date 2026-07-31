@@ -130,6 +130,43 @@
     }
   }
 
+  @keyframes spin-slow {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes modal-overlay-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes modal-panel-in {
+    0% {
+      opacity: 0;
+      transform: translateY(28px) scale(0.94);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes modal-item-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
@@ -140,6 +177,22 @@
 
   .animate-glow-pulse {
     animation: glow-pulse 4s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 16s linear infinite;
+  }
+
+  .animate-modal-overlay {
+    animation: modal-overlay-in 0.35s ease-out both;
+  }
+
+  .animate-modal-panel {
+    animation: modal-panel-in 0.5s cubic-bezier(0.22, 1.35, 0.36, 1) both;
+  }
+
+  .animate-modal-item {
+    animation: modal-item-in 0.45s cubic-bezier(0.22, 1.35, 0.36, 1) both;
   }
 
   .vignette {
