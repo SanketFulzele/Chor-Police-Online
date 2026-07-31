@@ -147,7 +147,7 @@ export function GamePage() {
         animate={{ opacity: 1 }}
         className={`w-full space-y-6 text-center ${phase === "leaderboard" || phase === "finished" || isGameplayPhase ? "max-w-5xl" : "max-w-lg"}`}
       >
-        {phase === "card-reveal" ? (
+        {isGameplayPhase ? (
           <div className="space-y-3">
             <div className="flex items-center justify-center gap-3">
               <div className="h-px flex-1 max-w-28 bg-gradient-to-r from-transparent to-gold/40" />
@@ -181,7 +181,7 @@ export function GamePage() {
 
         {/* Gameplay: horizontal two-column layout (consistent across all gameplay phases) */}
         {isGameplayPhase && (
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-stretch gap-5 lg:gap-6 text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-center gap-5 lg:gap-6 text-left">
             {/* Left: player list */}
             <RoyalPanel className="flex flex-col p-5 sm:p-6">
               <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
