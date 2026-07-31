@@ -334,6 +334,28 @@ export function Room() {
 
         {/* ── Actions ────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row gap-3">
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              leaveRoom();
+              navigate("/");
+            }}
+            className="group flex w-full sm:flex-1 cursor-pointer items-center justify-center gap-2.5 rounded-2xl border border-gold/25 bg-[#0d0d1f]/80 px-6 py-3.5 text-base font-semibold tracking-wide text-gold/80 transition-all duration-300 hover:border-gold/60 hover:bg-[#12122a]/80 hover:text-gold hover:shadow-[0_0_30px_rgba(255,215,0,0.12)]"
+          >
+            <svg
+              className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Leave Room
+          </motion.button>
+
           {!isHost && (
             <Button
               variant={myPlayer?.isReady ? "secondary" : "gold-gradient"}
@@ -358,28 +380,6 @@ export function Room() {
               {starting ? "Starting..." : "Start Game"}
             </Button>
           )}
-
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              leaveRoom();
-              navigate("/");
-            }}
-            className="group flex w-full sm:flex-1 cursor-pointer items-center justify-center gap-2.5 rounded-2xl border border-gold/25 bg-[#0d0d1f]/80 px-6 py-3.5 text-base font-semibold tracking-wide text-gold/80 transition-all duration-300 hover:border-gold/60 hover:bg-[#12122a]/80 hover:text-gold hover:shadow-[0_0_30px_rgba(255,215,0,0.12)]"
-          >
-            <svg
-              className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            Leave Room
-          </motion.button>
         </div>
       </motion.div>
     </div>
