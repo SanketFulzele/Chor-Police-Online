@@ -454,7 +454,7 @@ export function endGame(room: Room, player: Player): EngineResult {
     p.statistics.timesRaja += playerStats[p.id].timesRaja;
     p.statistics.timesMantri += playerStats[p.id].timesMantri;
     p.statistics.timesChor += playerStats[p.id].timesChor;
-    p.statistics.timesDaku += playerStats[p.id].timesDaku;
+    p.statistics.timesSipahi += playerStats[p.id].timesSipahi;
     p.statistics.correctGuesses += playerStats[p.id].correctGuesses;
     p.statistics.wrongGuesses += playerStats[p.id].wrongGuesses;
     p.statistics.averageScore = p.statistics.totalScore / Math.max(1, p.statistics.gamesPlayed);

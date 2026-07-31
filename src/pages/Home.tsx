@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { HowToPlayModal } from "../components/ui/HowToPlayModal";
+import { RoleIcon } from "../components/game/RoleIcon";
+import { ROLE_LABELS } from "../constants/game";
+import type { GameRole } from "../types";
 
 export function Home() {
   const navigate = useNavigate();
@@ -52,8 +55,13 @@ export function Home() {
         </Card>
 
         <Card className="text-center">
-          <p className="text-text-muted text-sm">
-            👑 Raja &middot; 👮 Mantri &middot; 🥷 Chor &middot; 🔫 Daku
+          <p className="text-text-muted text-sm flex items-center justify-center gap-3 flex-wrap">
+            {(["raja", "mantri", "chor", "sipahi"] as GameRole[]).map((role) => (
+              <span key={role} className="flex items-center gap-1.5">
+                <RoleIcon role={role} className="w-5 h-5" />
+                {ROLE_LABELS[role]}
+              </span>
+            ))}
           </p>
         </Card>
       </motion.div>

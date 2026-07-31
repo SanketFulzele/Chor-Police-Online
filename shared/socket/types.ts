@@ -1,4 +1,4 @@
-export type GameRole = "raja" | "mantri" | "chor" | "daku";
+export type GameRole = "raja" | "mantri" | "chor" | "sipahi";
 
 export type GamePhase =
   | "waiting"
@@ -20,7 +20,7 @@ export interface PlayerStatistics {
   timesRaja: number;
   timesMantri: number;
   timesChor: number;
-  timesDaku: number;
+  timesSipahi: number;
   correctGuesses: number;
   wrongGuesses: number;
   averageScore: number;

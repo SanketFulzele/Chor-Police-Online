@@ -9,7 +9,7 @@ export interface PlayerStats {
   timesRaja: number;
   timesMantri: number;
   timesChor: number;
-  timesDaku: number;
+  timesSipahi: number;
   correctGuesses: number;
   wrongGuesses: number;
 }
@@ -24,7 +24,7 @@ export function calculatePlayerStats(
   let timesRaja = 0;
   let timesMantri = 0;
   let timesChor = 0;
-  let timesDaku = 0;
+  let timesSipahi = 0;
   let correctGuesses = 0;
   let wrongGuesses = 0;
 
@@ -37,7 +37,7 @@ export function calculatePlayerStats(
     if (role === "raja") timesRaja++;
     else if (role === "mantri") timesMantri++;
     else if (role === "chor") timesChor++;
-    else if (role === "daku") timesDaku++;
+    else if (role === "sipahi") timesSipahi++;
 
     if (playerId === round.mantriId || role === "mantri") {
       if (round.isCorrect) correctGuesses++;
@@ -55,7 +55,7 @@ export function calculatePlayerStats(
     timesRaja,
     timesMantri,
     timesChor,
-    timesDaku,
+    timesSipahi,
     correctGuesses,
     wrongGuesses,
   };
@@ -65,7 +65,7 @@ export function countRoles(
   playerId: string,
   rounds: RoundHistoryEntry[]
 ): Record<GameRole, number> {
-  const counts: Record<GameRole, number> = { raja: 0, mantri: 0, chor: 0, daku: 0 };
+  const counts: Record<GameRole, number> = { raja: 0, mantri: 0, chor: 0, sipahi: 0 };
   for (const round of rounds) {
     const role = round.roles[playerId];
     if (role) counts[role]++;

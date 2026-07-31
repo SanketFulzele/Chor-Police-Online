@@ -3,7 +3,7 @@ import type { ScoreInput, ScoreOutput } from "./types";
 const RAJA_POINTS = 1000;
 const MANTRI_CORRECT_POINTS = 500;
 const MANTRI_WRONG_POINTS = 0;
-const DAKU_POINTS = 300;
+const SIPAHI_POINTS = 300;
 const CHOR_CORRECT_POINTS = 0;
 const CHOR_WRONG_POINTS = 500;
 
@@ -26,8 +26,8 @@ export function calculateScores(input: ScoreInput): ScoreOutput {
       case "chor":
         scores[playerId] = isCorrect ? CHOR_CORRECT_POINTS : CHOR_WRONG_POINTS;
         break;
-      case "daku":
-        scores[playerId] = DAKU_POINTS;
+      case "sipahi":
+        scores[playerId] = SIPAHI_POINTS;
         break;
     }
   }

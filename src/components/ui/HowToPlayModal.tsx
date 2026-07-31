@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./Button";
+import { RoleIcon } from "../game/RoleIcon";
+import { ROLE_LABELS, ROLE_COLORS } from "../../constants/game";
+import type { GameRole } from "../../types";
 
 interface HowToPlayModalProps {
   open: boolean;
@@ -93,15 +96,12 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
                 </h3>
                 <p className="text-sm text-text-muted mb-3">There are four roles — every player receives one at random.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[
-                    { emoji: "👑", name: "Raja", color: "text-gold" },
-                    { emoji: "📜", name: "Mantri", color: "text-purple-400" },
-                    { emoji: "👮", name: "Police", color: "text-blue-400" },
-                    { emoji: "🕵️", name: "Chor", color: "text-rose-400" },
-                  ].map((r) => (
-                    <div key={r.name} className={`rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-center ${r.color}`}>
-                      <span className="text-xl block">{r.emoji}</span>
-                      <span className="text-xs font-semibold">{r.name}</span>
+                  {(["raja", "mantri", "sipahi", "chor"] as GameRole[]).map((role) => (
+                    <div key={role} className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-center">
+                      <RoleIcon role={role} className="w-8 h-8 mx-auto block" />
+                      <span className="text-xs font-semibold mt-1 block" style={{ color: ROLE_COLORS[role] }}>
+                        {ROLE_LABELS[role]}
+                      </span>
                     </div>
                   ))}
                 </div>

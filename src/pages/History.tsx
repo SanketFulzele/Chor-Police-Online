@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { usePersistence } from "../hooks/usePersistence";
-import { ROLE_EMOJIS, ROLE_LABELS } from "../constants/game";
+import { RoleIcon } from "../components/game/RoleIcon";
+import { ROLE_LABELS } from "../constants/game";
 import type { StoredGame } from "../types";
 
 export function History() {
@@ -99,8 +100,8 @@ export function History() {
                           {Object.entries(r.roles).map(([pid, role]) => {
                             const player = selectedGame.players.find((p) => p.id === pid);
                             return (
-                              <span key={pid} className="block">
-                                {player?.name ?? pid}: {ROLE_EMOJIS[role]} {ROLE_LABELS[role]}
+                              <span key={pid} className="block flex items-center gap-1">
+                                <RoleIcon role={role} className="w-4 h-4" /> {player?.name ?? pid}: {ROLE_LABELS[role]}
                                 {r.mantriId === pid && " (Mantri)"}
                                 {r.chosenId === pid && " ← Chosen"}
                               </span>

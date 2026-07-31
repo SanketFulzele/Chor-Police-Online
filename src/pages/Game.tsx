@@ -9,7 +9,8 @@ import { useGameStore } from "../store/gameStore";
 import { useGame } from "../hooks/useGame";
 import { GameCard } from "../components/game/Card";
 import { ShuffleAnimation } from "../components/game/ShuffleAnimation";
-import { ROLE_EMOJIS, ROLE_LABELS, ROLE_COLORS } from "../constants/game";
+import { RoleIcon } from "../components/game/RoleIcon";
+import { ROLE_LABELS, ROLE_COLORS } from "../constants/game";
 import { usePersistence } from "../hooks/usePersistence";
 import { loadSession, clearSession } from "../utils/session";
 import type { GameRole } from "../types";
@@ -24,7 +25,6 @@ export function GamePage() {
   const myRole = useGameStore((s) => s.myRole);
   const hasRevealed = useGameStore((s) => s.hasRevealed);
   const hasHidden = useGameStore((s) => s.hasHidden);
-  const mantriId = useGameStore((s) => s.mantriId);
   const showResult = useGameStore((s) => s.showResult);
   const currentTotals = useGameStore((s) => s.currentTotals);
   const winnerId = useGameStore((s) => s.winnerId);
@@ -164,10 +164,14 @@ export function GamePage() {
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 text-xs">
                     {isPublicRaja && (
-                      <span className="font-bold text-gold">👑 Raja</span>
+                      <span className="font-bold text-gold flex items-center gap-1">
+                        <RoleIcon role="raja" className="w-4 h-4" /> Raja
+                      </span>
                     )}
                     {isPublicMantri && (
-                      <span className="font-bold text-purple-400">📜 Mantri</span>
+                      <span className="font-bold text-purple-400 flex items-center gap-1">
+                        <RoleIcon role="mantri" className="w-4 h-4" /> Mantri
+                      </span>
                     )}
                   </div>
                 </div>
@@ -445,10 +449,10 @@ export function GamePage() {
                             {p.name} {p.id === playerId && <span className="text-text-muted text-xs">(You)</span>}
                           </p>
                           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-text-muted">
-                            <span>👑 Raja: {String(stats.timesRaja ?? 0)}x</span>
-                            <span>📜 Mantri: {String(stats.timesMantri ?? 0)}x</span>
-                            <span>🥷 Chor: {String(stats.timesChor ?? 0)}x</span>
-                            <span>🔫 Daku: {String(stats.timesDaku ?? 0)}x</span>
+                            <span className="flex items-center gap-1"><RoleIcon role="raja" /> Raja: {String(stats.timesRaja ?? 0)}x</span>
+                            <span className="flex items-center gap-1"><RoleIcon role="mantri" /> Mantri: {String(stats.timesMantri ?? 0)}x</span>
+                            <span className="flex items-center gap-1"><RoleIcon role="chor" /> Chor: {String(stats.timesChor ?? 0)}x</span>
+                            <span className="flex items-center gap-1"><RoleIcon role="sipahi" /> Sipahi: {String(stats.timesSipahi ?? 0)}x</span>
                             <span>✓ Correct: {String(stats.correctGuesses ?? 0)}</span>
                             <span>✗ Wrong: {String(stats.wrongGuesses ?? 0)}</span>
                           </div>
@@ -522,7 +526,7 @@ function ScoreTooltip({ cell }: { cell: { rect: DOMRect; role: GameRole; round: 
       <div className="bg-[#1c1c3a] text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-[0_8px_30px_rgba(0,0,0,0.5)] border border-white/[0.1]">
         <div className="text-center text-white/40 text-[10px] mb-0.5 tracking-wide font-medium">Game {cell.round}</div>
         <div className="flex items-center gap-1.5">
-          <span>{ROLE_EMOJIS[cell.role]} <span style={{ color: ROLE_COLORS[cell.role] }} className="font-semibold">{ROLE_LABELS[cell.role]}</span></span>
+          <span className="flex items-center gap-1"><RoleIcon role={cell.role} /> <span style={{ color: ROLE_COLORS[cell.role] }} className="font-semibold">{ROLE_LABELS[cell.role]}</span></span>
         </div>
       </div>
     </motion.div>,

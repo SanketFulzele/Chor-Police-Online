@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import type { GameRole } from "../../types";
-import { ROLE_EMOJIS, ROLE_LABELS, ROLE_COLORS } from "../../constants/game";
+import { CARD_IMAGES, ROLE_COLORS } from "../../constants/game";
 
 interface GameCardProps {
   role?: GameRole;
@@ -10,14 +10,12 @@ interface GameCardProps {
 }
 
 export function GameCard({ role, revealed, onReveal, onHide }: GameCardProps) {
-  const label = role ? ROLE_LABELS[role] : "?";
-  const emoji = role ? ROLE_EMOJIS[role] : "🃏";
   const color = role ? ROLE_COLORS[role] : "#64748b";
 
   return (
     <div className="flex flex-col items-center gap-4">
       <motion.div
-        className="relative w-36 h-48 cursor-pointer"
+        className="relative w-36 h-48 cursor-pointer overflow-hidden"
         style={{ perspective: 1000 }}
         onClick={revealed ? undefined : onReveal}
       >
@@ -28,30 +26,41 @@ export function GameCard({ role, revealed, onReveal, onHide }: GameCardProps) {
           style={{ transformStyle: "preserve-3d" }}
         >
           <div
-            className="absolute inset-0 rounded-xl border-2 border-white/20 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center"
+            className="absolute inset-0 rounded-xl overflow-hidden"
             style={{ backfaceVisibility: "hidden" }}
           >
-            <span className="text-6xl">🃏</span>
+            <img
+              src={CARD_IMAGES.hidden}
+              alt="Card"
+              draggable={false}
+              className="w-full h-full object-cover"
+            />
           </div>
 
           <div
-            className="absolute inset-0 rounded-xl border-2 flex items-center justify-center"
+            className="absolute inset-0 rounded-xl overflow-hidden"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
-              borderColor: color,
-              background: `linear-gradient(135deg, ${color}20, ${color}10)`,
+              border: `2px solid ${color}`,
+              boxShadow: `0 0 18px ${color}33`,
             }}
           >
-            <div className="text-center">
-              <span className="text-5xl block mb-2">{emoji}</span>
-              <span
-                className="text-lg font-bold block"
-                style={{ color }}
-              >
-                {label}
-              </span>
-            </div>
+            {role ? (
+              <img
+                src={CARD_IMAGES[role]}
+                alt={role}
+                draggable={false}
+                className="w-full h-full object-contain p-2"
+              />
+            ) : (
+              <img
+                src={CARD_IMAGES.hidden}
+                alt="Card"
+                draggable={false}
+                className="w-full h-full object-cover"
+              />
+            )}
           </div>
         </motion.div>
       </motion.div>

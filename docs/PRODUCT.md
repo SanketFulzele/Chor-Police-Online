@@ -1,6 +1,6 @@
 # Chor Police Online
 
-A modern multiplayer version of the classic Indian game **Chor Police** (also known as *Raja Mantri Chor Sipahi* / *Raja Mantri Chor Daku*). Built as a real-time web game with a polished, AAA-quality gaming interface.
+A modern multiplayer version of the classic Indian game **Chor Police** (also known as *Raja Mantri Chor Sipahi*). Built as a real-time web game with a polished, AAA-quality gaming interface.
 
 ---
 
@@ -119,7 +119,7 @@ The following flow describes the user experience as implemented. Steps marked wi
    ─────────────────────────────────────────────
    - Landing page with title "Chor Police"
    - Two buttons: Create Room, Join Room
-   - Role emoji display (👑 👮 🥷 🔫)
+   - Role card display (Raja, Mantri, Sipahi, Chor)
    - All glassmorphism cards with gold accents
 
 2. CREATE ROOM
@@ -199,7 +199,7 @@ The following flow describes the user experience as implemented. Steps marked wi
 8. GUESSING PHASE
    ─────────────────────────────────────────────
    - Phase: guessing → Only the Mantri can interact
-   - Mantri sees Chor and Daku as selectable players (Raja/Mantri excluded)
+   - Mantri sees Chor and Sipahi as selectable players (Raja/Mantri excluded)
    - Tap to select, then confirm (double-tap flow prevents misclicks)
    - Other players see "The Mantri is trying to identify the Chor..."
    - Server validates: correct phase, caller is Mantri, valid target, no duplicates
@@ -211,8 +211,8 @@ The following flow describes the user experience as implemented. Steps marked wi
    - `roles-revealed` event broadcasts full role map to all players
    - Phase: score-update → Round result displayed (Correct/Wrong)
    - Scoring rules:
-     Correct Guess: Raja +1000, Mantri +500, Daku +300, Chor +0
-     Wrong Guess:   Raja +1000, Mantri  +0, Daku +300, Chor +500
+     Correct Guess: Raja +1000, Mantri +500, Sipahi +300, Chor +0
+     Wrong Guess:   Raja +1000, Mantri  +0, Sipahi +300, Chor +500
    - Score calculation is inside the Game Engine (scoreCalculator.ts)
 
 10. LEADERBOARD & NEXT ROUND
@@ -264,7 +264,7 @@ src/game/
 | `gameEngine.ts` | **Single owner of all gameplay rules.** Exports action functions (`startGame`, `revealCard`, `hideCard`, `callMantri`, `submitGuess`, `nextRound`, `endGame`) that each self-validate, mutate the room, and return typed events to emit. Provides `advanceToPhase()` for generic phase transitions with automatic role distribution when leaving `shuffling`. Phase scheduling (timed auto-advancements) returned as `ScheduledEvent[]`. Calls `calculateScores()` from `scoreCalculator.ts`, `distributeRoles()` from `roleDistributor.ts`, `buildGameResult()` from `winnerCalculator.ts`, and `calculatePlayerStats()` from `statisticsManager.ts`. Zero dependencies on React, Socket.IO, or Express. |
 | `gameStateMachine.ts` | Defines all 13 game phases in order (`waiting → shuffling → card-distribution → card-reveal → card-hidden → waiting-raja → raja-calling → mantri-reveal → guessing → reveal-roles → score-update → leaderboard → finished`) and legal transitions between them. Exports `canTransition()`, `getNextPhase()`, `getLegalTransitions()` |
 | `roleDistributor.ts` | Deficit-based fair role rotation algorithm. Distributes roles using deficit scores with last-role penalty to avoid repeats. Random shuffle on first round; fair distribution on subsequent rounds. |
-| `scoreCalculator.ts` | Scoring logic — single source of truth. Correct: Raja +1000, Mantri +500, Daku +300, Chor +0. Wrong: Raja +1000, Mantri +0, Daku +300, Chor +500. Exports `calculateScores()` and `accumulateScores()` |
+| `scoreCalculator.ts` | Scoring logic — single source of truth. Correct: Raja +1000, Mantri +500, Sipahi +300, Chor +0. Wrong: Raja +1000, Mantri +0, Sipahi +300, Chor +500. Exports `calculateScores()` and `accumulateScores()` |
 | `roundManager.ts` | Tracks round number, completed rounds, and current phase. Defines `RoundState` interface. Exports `createRoundState()`, `nextRound()`, `completeRound()` |
 | `winnerCalculator.ts` | Fully implemented — `calculateLeaderboard()` from round history, `determineWinner()`, `buildGameResult()`, `hasTie()` |
 | `statisticsManager.ts` | Fully implemented — `calculatePlayerStats()` (games played, wins, role counts, guess accuracy), `countRoles()` |

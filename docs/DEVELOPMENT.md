@@ -411,10 +411,10 @@ socket.on(EVENT, (payload) => {
 - Server auto-detects Raja when all cards hidden and transitions to `raja-calling`
 - Raja selects Mantri via `call-mantri` event (validated: correct phase, is Raja, valid target)
 - Mantri identity broadcast to all players via `mantri-revealed` event
-- Mantri guesses Chor/Daku via `submit-guess` event with confirmation UI (tap → confirm)
+- Mantri guesses Chor/Sipahi via `submit-guess` event with confirmation UI (tap → confirm)
 - Server validates guess (correct phase, is Mantri, valid target, not Raja/Mantri)
 - All roles revealed simultaneously via `roles-revealed` event
-- `scoreCalculator.ts` — fully implemented scoring logic (Correct: Raja +1000, Mantri +500, Daku +300, Chor +0; Wrong: Raja +1000, Mantri +0, Daku +300, Chor +500)
+- `scoreCalculator.ts` — fully implemented scoring logic (Correct: Raja +1000, Mantri +500, Sipahi +300, Chor +0; Wrong: Raja +1000, Mantri +0, Sipahi +300, Chor +500)
 - Server-side scoring (calculateScores, accumulateScores) called from gameHandler
 - Round result screen with per-player scores and totals
 - Leaderboard sorted by score with medal animations
@@ -427,7 +427,7 @@ socket.on(EVENT, (payload) => {
 - Game.tsx — complete phase-based rendering for all 7 new phases:
   - `waiting-raja` / `raja-calling`: Raja sees player list to choose Mantri; others see waiting
   - `mantri-reveal`: Scale-in spotlight animation of Mantri identity
-  - `guessing`: Mantri sees Chor/Daku selection with confirm flow; others see waiting
+  - `guessing`: Mantri sees Chor/Sipahi selection with confirm flow; others see waiting
   - `reveal-roles`: All roles shown with flip animation
   - `score-update`: Correct/Wrong badge + per-player score breakdown
   - `leaderboard`: Sorted leaderboard with medal emojis + Next Round button for host
