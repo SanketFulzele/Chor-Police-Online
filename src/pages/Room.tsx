@@ -26,7 +26,7 @@ function CopyButton({ copied, onClick }: CopyButtonProps) {
         whileTap={{ scale: 0.9 }}
         aria-label={copied ? "Room code copied" : "Copy room code"}
         title={copied ? "Copied" : "Copy room code"}
-        className={`flex items-center justify-center w-11 h-11 rounded-xl border transition-all duration-300 cursor-pointer ${
+        className={`flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-300 cursor-pointer ${
           copied
             ? "border-emerald/60 bg-emerald/15 text-emerald shadow-[0_0_25px_rgba(16,185,129,0.3)]"
             : "border-gold/30 bg-gold/[0.06] text-gold/80 hover:border-gold/60 hover:bg-gold/[0.12] hover:text-gold hover:shadow-[0_0_25px_rgba(255,215,0,0.18)]"
@@ -42,11 +42,11 @@ function CopyButton({ copied, onClick }: CopyButtonProps) {
             className="flex items-center justify-center"
           >
             {copied ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" />
               </svg>
             )}
@@ -134,23 +134,23 @@ export function Room() {
     : "Waiting for all players to be ready";
 
   return (
-    <div className="relative flex-1 flex flex-col items-center justify-center px-4 py-10 md:py-14 overflow-x-hidden">
+    <div className="relative flex-1 flex flex-col items-center justify-center px-4 py-6 md:py-10 overflow-x-hidden">
       <PremiumBackground />
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative w-full max-w-md space-y-6"
+        className="relative w-full max-w-xl space-y-5"
       >
         {/* ── Room Code Hero ─────────────────────────────────────────── */}
         <section className="text-center">
           <motion.div
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-b from-gold/20 to-transparent border border-gold/30 shadow-[0_0_40px_rgba(255,215,0,0.25)] mb-5"
+            className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-b from-gold/20 to-transparent border border-gold/30 shadow-[0_0_40px_rgba(255,215,0,0.25)] mb-4"
           >
-            <CrownIcon className="w-6 h-6 text-gold" />
+            <CrownIcon className="w-5 h-5 text-gold" />
           </motion.div>
 
           <p className="text-[11px] tracking-[0.35em] uppercase text-gold/70 mb-3">
@@ -158,13 +158,13 @@ export function Room() {
           </p>
 
           <div className="flex items-center justify-center gap-4">
-            <h1 className="text-4xl sm:text-5xl font-black font-serif tracking-[0.2em] gold-gradient text-glow leading-none select-all">
+            <h1 className="text-3xl sm:text-4xl font-black font-serif tracking-[0.2em] gold-gradient text-glow leading-none select-all">
               {room.code}
             </h1>
             <CopyButton copied={copied} onClick={handleCopyCode} />
           </div>
 
-          <div className="flex items-center justify-center gap-3 mt-6 mb-5">
+          <div className="flex items-center justify-center gap-3 mt-4 mb-4">
             <span className="h-px w-16 md:w-24 bg-gradient-to-r from-transparent to-gold/60" />
             <span className="w-2 h-2 rotate-45 bg-gold shadow-[0_0_10px_rgba(255,215,0,0.8)]" />
             <span className="h-px w-16 md:w-24 bg-gradient-to-l from-transparent to-gold/60" />
@@ -176,8 +176,8 @@ export function Room() {
         </section>
 
         {/* ── Player Panel ───────────────────────────────────────────── */}
-        <RoyalPanel className="p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-white/[0.06]">
+        <RoyalPanel className="p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3 mb-3 pb-2.5 border-b border-white/[0.06]">
             <h3 className="text-base font-bold tracking-wide text-text-primary">
               Players{" "}
               <span className="text-text-muted text-sm font-medium">
@@ -207,7 +207,7 @@ export function Room() {
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <AnimatePresence initial={false}>
               {room.players.map((player, i) => (
                 <motion.div
@@ -217,7 +217,7 @@ export function Room() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ delay: i * 0.08, duration: 0.3 }}
-                  className={`flex items-center gap-3.5 rounded-2xl border px-4 py-3.5 transition-all duration-300 ${
+                  className={`flex items-center gap-3 rounded-xl border px-3 py-3 h-full transition-all duration-300 ${
                     player.isConnected
                       ? "bg-white/[0.03] border-white/[0.08] hover:border-gold/30 hover:bg-white/[0.06] hover:shadow-[0_0_25px_rgba(255,215,0,0.07)]"
                       : "bg-white/[0.01] border-white/[0.05] opacity-50"
@@ -225,7 +225,7 @@ export function Room() {
                 >
                   <div className="relative shrink-0">
                     <div
-                      className="flex h-11 w-11 items-center justify-center rounded-full text-lg font-bold text-white ring-1 ring-white/10"
+                      className="flex h-10 w-10 items-center justify-center rounded-full text-base font-bold text-white ring-1 ring-white/10"
                       style={{ backgroundColor: player.avatarColor }}
                     >
                       {player.name.charAt(0).toUpperCase()}
@@ -241,7 +241,7 @@ export function Room() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-text-primary">
+                    <p className="truncate text-sm font-semibold text-text-primary">
                       {player.name}
                       {player.id === myPlayer?.id && (
                         <span className="ml-1.5 text-xs font-normal text-text-muted">
@@ -289,16 +289,16 @@ export function Room() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: (room.players.length + i) * 0.08, duration: 0.4 }}
-                className="flex items-center gap-3.5 rounded-2xl border border-dashed border-gold/15 bg-white/[0.015] px-4 py-3.5 opacity-70"
+                className="flex items-center gap-3 rounded-xl border border-dashed border-gold/15 bg-white/[0.015] px-3 py-3 h-full opacity-70"
               >
                 <motion.div
                   animate={{ scale: [1, 1.04, 1], opacity: [0.5, 0.9, 0.5] }}
                   transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut", delay: i * 0.4 }}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.04]"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.04]"
                 >
-                  <span className="text-lg font-medium text-text-muted">?</span>
+                  <span className="text-base font-medium text-text-muted">?</span>
                 </motion.div>
-                <p className="text-sm text-text-muted">Waiting for player...</p>
+                <p className="truncate text-sm text-text-muted">Waiting for player...</p>
               </motion.div>
             ))}
           </div>
@@ -308,7 +308,7 @@ export function Room() {
         <div
           role="status"
           aria-live="polite"
-          className={`relative flex items-center justify-center gap-3 overflow-hidden rounded-2xl border px-5 py-4 ${
+          className={`relative flex items-center justify-center gap-3 overflow-hidden rounded-2xl border px-4 py-3 ${
             allHereAndReady
               ? "border-emerald/25 bg-emerald/[0.06]"
               : "border-royal/35 bg-royal/[0.09]"
@@ -320,11 +320,11 @@ export function Room() {
               allHereAndReady ? "bg-emerald/[0.18]" : "bg-royal/[0.18]"
             }`}
           />
-          <span className="relative text-2xl leading-none">
+          <span className="relative text-xl leading-none">
             {allHereAndReady ? "🚀" : "👥"}
           </span>
           <p
-            className={`relative text-base sm:text-lg font-bold tracking-wide ${
+            className={`relative text-sm sm:text-base font-bold tracking-wide ${
               allHereAndReady ? "text-emerald" : "text-gold"
             }`}
           >
@@ -333,12 +333,13 @@ export function Room() {
         </div>
 
         {/* ── Actions ────────────────────────────────────────────────── */}
-        <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           {!isHost && (
             <Button
               variant={myPlayer?.isReady ? "secondary" : "gold-gradient"}
               size="lg"
               fullWidth
+              className="sm:flex-1"
               onClick={toggleReady}
             >
               {myPlayer?.isReady ? "Not Ready" : "Ready"}
@@ -350,6 +351,7 @@ export function Room() {
               variant="gold-gradient"
               size="lg"
               fullWidth
+              className="sm:flex-1"
               disabled={!canStart || starting}
               onClick={handleStartGame}
             >
@@ -365,7 +367,7 @@ export function Room() {
               leaveRoom();
               navigate("/");
             }}
-            className="group flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border border-gold/25 bg-[#0d0d1f]/80 px-6 py-3.5 text-base font-semibold tracking-wide text-gold/80 transition-all duration-300 hover:border-gold/60 hover:bg-[#12122a]/80 hover:text-gold hover:shadow-[0_0_30px_rgba(255,215,0,0.12)]"
+            className="group flex w-full sm:flex-1 cursor-pointer items-center justify-center gap-2.5 rounded-2xl border border-gold/25 bg-[#0d0d1f]/80 px-6 py-3.5 text-base font-semibold tracking-wide text-gold/80 transition-all duration-300 hover:border-gold/60 hover:bg-[#12122a]/80 hover:text-gold hover:shadow-[0_0_30px_rgba(255,215,0,0.12)]"
           >
             <svg
               className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1"

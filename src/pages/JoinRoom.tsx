@@ -90,6 +90,8 @@ export function JoinRoom() {
                 required: "Room code is required",
                 minLength: { value: 4, message: "Invalid code" },
                 maxLength: { value: 6, message: "Invalid code" },
+                setValueAs: (value: unknown) =>
+                  String(value).trim().toUpperCase(),
               })}
               error={errors.code?.message}
             />
