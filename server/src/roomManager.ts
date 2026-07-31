@@ -182,14 +182,20 @@ export function getPlayerBySocketId(
   return null;
 }
 
-export function togglePlayerReady(code: string, playerId: string): Room | null {
+export function setPlayerReady(
+  code: string,
+  playerId: string,
+  ready: boolean
+): Room | null {
   const room = rooms.get(code);
   if (!room) return null;
 
   const player = room.players.find((p) => p.id === playerId);
   if (!player) return null;
 
-  player.isReady = !player.isReady;
+  if (player.isReady === ready) return null;
+
+  player.isReady = ready;
   return room;
 }
 

@@ -56,11 +56,11 @@ export function useRoom() {
   const toggleReady = useCallback(() => {
     if (!socket) return;
     const player = room?.players.find((p) => p.id === playerId);
-    if (player?.isReady) {
-      socket.emit(SocketEvents.PLAYER_UNREADY);
-    } else {
-      socket.emit(SocketEvents.PLAYER_READY);
-    }
+    const targetReady = !(player?.isReady ?? false);
+    useRoomStore.getState().updatePlayer(playerId, { isReady: targetReady });
+    socket.emit(
+      targetReady ? SocketEvents.PLAYER_READY : SocketEvents.PLAYER_UNREADY
+    );
   }, [socket, room, playerId]);
 
   const startGame = useCallback(() => {

@@ -9,6 +9,7 @@ import { useRoomStore } from "../store/roomStore";
 import { useGameStore } from "../store/gameStore";
 import { useGame } from "../hooks/useGame";
 import { GameCard } from "../components/game/Card";
+import { PlayerList } from "../components/game/PlayerList";
 import { ShuffleAnimation } from "../components/game/ShuffleAnimation";
 import { RoleIcon } from "../components/game/RoleIcon";
 import { IdentifyChorModal } from "../components/game/IdentifyChorModal";
@@ -134,6 +135,7 @@ export function GamePage() {
   };
 
   const isGameplayPhase = phase && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase);
+  const isCardReveal = phase === "card-reveal";
 
   const leaderboardRows = toRows(room.roundHistory);
   const leaderboardRanked = rankPlayers(room.players, currentTotals, leaderboardRows);
@@ -144,7 +146,7 @@ export function GamePage() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className={`w-full space-y-6 text-center ${phase === "leaderboard" || phase === "finished" ? "max-w-5xl" : "max-w-lg"}`}
+        className={`w-full space-y-6 text-center ${phase === "leaderboard" || phase === "finished" || isCardReveal ? "max-w-5xl" : "max-w-lg"}`}
       >
         {phase === "card-reveal" ? (
           <div className="space-y-3">
@@ -179,8 +181,64 @@ export function GamePage() {
           </div>
         )}
 
+        {/* Phase: card-reveal (horizontal layout) */}
+        {isCardReveal && (
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-stretch gap-5 lg:gap-6 text-left">
+            {/* Left: player list */}
+            <RoyalPanel className="flex flex-col p-5 sm:p-6">
+              <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+                <h3 className="text-base font-bold tracking-wide text-text-primary">
+                  Players{" "}
+                  <span className="text-sm font-medium text-text-muted">
+                    ({room.players.length}/4)
+                  </span>
+                </h3>
+                <span className="text-xs font-semibold uppercase tracking-widest text-gold/70">
+                  Round {round}
+                </span>
+              </div>
+              <PlayerList players={room.players} playerId={playerId} />
+            </RoyalPanel>
+
+            {/* Right: role card panel */}
+            <RoyalPanel decorativeCorners className="relative flex flex-col items-center justify-center overflow-hidden px-5 py-10 sm:px-8">
+              <GameCard
+                size="sm"
+                role={myRole ?? undefined}
+                revealed={hasRevealed && !hasHidden}
+                onReveal={revealCard}
+                onHide={hideCard}
+              />
+
+              {myRole === "raja" && hasRevealed && !hasHidden && !rajaRevealed && (
+                <p className="mt-4 text-sm text-yellow-400">
+                  Raja revealed! Other players can now see who you are.
+                </p>
+              )}
+
+              {myRole === "raja" && rajaRevealed && (
+                <Button
+                  className="mt-4 gold-gradient text-black font-bold"
+                  onClick={askForMantri}
+                >
+                  Ask: Who is my Mantri?
+                </Button>
+              )}
+
+              <div className="mt-6 flex w-full items-start gap-3 rounded-2xl border border-gold/20 bg-gold/[0.04] px-4 py-3 text-left">
+                <CrownIcon className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+                <p className="text-xs leading-relaxed text-text-secondary">
+                  Keep your role a secret! Only the{" "}
+                  <span className="font-semibold text-gold">Raja</span> is revealed
+                  publicly. Click the card or use the buttons to peek and hide.
+                </p>
+              </div>
+            </RoyalPanel>
+          </div>
+        )}
+
         {/* Persistent player list during gameplay */}
-        {isGameplayPhase && (
+        {isGameplayPhase && !isCardReveal && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {room.players.map((p) => {
               const isPublicRaja = p.publicRole === "raja";
@@ -281,7 +339,7 @@ export function GamePage() {
         )}
 
         {/* Persistent role card - always available during gameplay */}
-        {myRole && phase && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase) && (
+        {myRole && phase && phase !== "card-reveal" && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase) && (
           <RoyalPanel decorativeCorners className="px-5 py-8 sm:px-8">
             <div className="space-y-6">
               <GameCard

@@ -8,6 +8,7 @@ interface GameCardProps {
   revealed: boolean;
   onReveal?: () => void;
   onHide?: () => void;
+  size?: "md" | "sm";
 }
 
 function EyeIcon({ className = "w-5 h-5" }: { className?: string }) {
@@ -57,7 +58,7 @@ const REVEAL_PARTICLES = [
   { className: "top-1/2 -right-8", delay: 0.04 },
 ] as const;
 
-export function GameCard({ role, revealed, onReveal, onHide }: GameCardProps) {
+export function GameCard({ role, revealed, onReveal, onHide, size = "md" }: GameCardProps) {
   const roleLabel = role ? ROLE_LABELS[role] : "role";
 
   const handleToggle = () => {
@@ -78,7 +79,14 @@ export function GameCard({ role, revealed, onReveal, onHide }: GameCardProps) {
   return (
     <div className="relative flex flex-col items-center gap-7">
       {/* Magical circle + glow behind the card */}
-      <div aria-hidden="true" className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-80 h-80 sm:w-96 sm:h-96">
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 rounded-full ${
+          size === "sm"
+            ? "w-72 h-72 sm:w-80 sm:h-80"
+            : "w-80 h-80 sm:w-96 sm:h-96"
+        }`}
+      >
         <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(255,215,0,0.14),transparent_62%)] animate-glow-pulse" />
         <div className="absolute inset-3 rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.12),transparent_70%)]" />
         <div className="absolute inset-0 rounded-full border border-gold/20" />
@@ -94,7 +102,9 @@ export function GameCard({ role, revealed, onReveal, onHide }: GameCardProps) {
         aria-label={revealed ? `Hide your ${roleLabel} card` : "Reveal your role card"}
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
-        className="relative aspect-[1187/1769] cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-gold/80 focus-visible:ring-offset-4 focus-visible:ring-offset-background rounded-2xl w-56 sm:w-64 md:w-72"
+        className={`relative aspect-[1187/1769] cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-gold/80 focus-visible:ring-offset-4 focus-visible:ring-offset-background rounded-2xl ${
+          size === "sm" ? "w-44 sm:w-48 md:w-52" : "w-56 sm:w-64 md:w-72"
+        }`}
         style={{ perspective: 1200 }}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}

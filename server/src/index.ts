@@ -9,7 +9,7 @@ import {
   leaveRoom,
   getRoom,
   getPlayerBySocketId,
-  togglePlayerReady,
+  setPlayerReady,
   setPlayerDisconnected,
   updatePlayerSocket,
 } from "./roomManager.js";
@@ -150,7 +150,7 @@ io.on("connection", (socket) => {
 
     const { room, player } = ctx;
     console.log(`[event] PLAYER_READY socket=${socket.id} player=${player.name} room=${room.code}`);
-    const updated = togglePlayerReady(room.code, player.id);
+    const updated = setPlayerReady(room.code, player.id, true);
     if (updated) {
       broadcastRoom(room.code);
     }
@@ -161,8 +161,8 @@ io.on("connection", (socket) => {
     if (!ctx) return;
 
     const { room, player } = ctx;
-    if (!player.isReady) return;
-    const updated = togglePlayerReady(room.code, player.id);
+    console.log(`[event] PLAYER_UNREADY socket=${socket.id} player=${player.name} room=${room.code}`);
+    const updated = setPlayerReady(room.code, player.id, false);
     if (updated) {
       broadcastRoom(room.code);
     }
