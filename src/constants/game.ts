@@ -1,9 +1,9 @@
 import type { GameRole } from "../types";
-import backcard from "../assets/backcard.png";
-import raja from "../assets/raja.png";
-import mantri from "../assets/mantri.png";
-import sipahi from "../assets/sipahi.png";
-import chor from "../assets/chor.png";
+import backcard from "../assets/backcard.jpg";
+import raja from "../assets/raja.jpg";
+import mantri from "../assets/mantri.jpg";
+import sipahi from "../assets/sipahi.jpg";
+import chor from "../assets/chor.jpg";
 
 export const ROLE_POINTS: Record<GameRole, number> = {
   raja: 1000,

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import type { GameRole } from "../../types";
-import { CARD_IMAGES, ROLE_COLORS } from "../../constants/game";
+import { CARD_IMAGES } from "../../constants/game";
 
 interface GameCardProps {
   role?: GameRole;
@@ -10,14 +10,14 @@ interface GameCardProps {
 }
 
 export function GameCard({ role, revealed, onReveal, onHide }: GameCardProps) {
-  const color = role ? ROLE_COLORS[role] : "#64748b";
-
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-5">
       <motion.div
-        className="relative w-36 h-48 cursor-pointer overflow-hidden"
-        style={{ perspective: 1000 }}
+        className="relative w-52 sm:w-60 md:w-64 aspect-[1187/1769] cursor-pointer"
+        style={{ perspective: 1200 }}
         onClick={revealed ? undefined : onReveal}
+        whileHover={revealed ? undefined : { scale: 1.03 }}
+        whileTap={revealed ? undefined : { scale: 0.97 }}
       >
         <motion.div
           className="absolute inset-0"
@@ -26,41 +26,27 @@ export function GameCard({ role, revealed, onReveal, onHide }: GameCardProps) {
           style={{ transformStyle: "preserve-3d" }}
         >
           <div
-            className="absolute inset-0 rounded-xl overflow-hidden"
+            className="absolute inset-0 overflow-hidden"
             style={{ backfaceVisibility: "hidden" }}
           >
             <img
               src={CARD_IMAGES.hidden}
-              alt="Card"
+              alt="Card back"
               draggable={false}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain object-center"
             />
           </div>
 
           <div
-            className="absolute inset-0 rounded-xl overflow-hidden"
-            style={{
-              backfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
-              border: `2px solid ${color}`,
-              boxShadow: `0 0 18px ${color}33`,
-            }}
+            className="absolute inset-0 overflow-hidden"
+            style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
-            {role ? (
-              <img
-                src={CARD_IMAGES[role]}
-                alt={role}
-                draggable={false}
-                className="w-full h-full object-contain p-2"
-              />
-            ) : (
-              <img
-                src={CARD_IMAGES.hidden}
-                alt="Card"
-                draggable={false}
-                className="w-full h-full object-cover"
-              />
-            )}
+            <img
+              src={role ? CARD_IMAGES[role] : CARD_IMAGES.hidden}
+              alt={role ?? "Card"}
+              draggable={false}
+              className="w-full h-full object-contain object-center"
+            />
           </div>
         </motion.div>
       </motion.div>
