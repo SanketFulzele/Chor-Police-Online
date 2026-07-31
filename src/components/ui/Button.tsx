@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 interface ButtonProps {
   children: ReactNode;
   onClick?: () => void;
-  variant?: "primary" | "secondary" | "ghost" | "gold";
+  variant?: "primary" | "secondary" | "ghost" | "gold" | "gold-gradient";
   size?: "sm" | "md" | "lg";
   disabled?: boolean;
   fullWidth?: boolean;
@@ -21,6 +21,8 @@ const variantClasses = {
     "bg-transparent hover:bg-white/5 text-text-secondary border-transparent",
   gold:
     "bg-gold hover:bg-gold-light text-black font-bold border-gold shadow-lg shadow-gold/20",
+  "gold-gradient":
+    "bg-gradient-to-b from-gold-light via-gold to-gold-dark text-black font-bold border-gold shadow-[0_10px_40px_rgba(255,215,0,0.35)] hover:shadow-[0_14px_50px_rgba(255,215,0,0.5)]",
 };
 
 const sizeClasses = {
@@ -48,7 +50,7 @@ export function Button({
       whileTap={disabled ? {} : { scale: 0.98 }}
       className={`
         rounded-xl font-semibold cursor-pointer
-        border transition-colors duration-200
+        border transition-all duration-300
         disabled:opacity-50 disabled:cursor-not-allowed
         ${variantClasses[variant]}
         ${sizeClasses[size]}

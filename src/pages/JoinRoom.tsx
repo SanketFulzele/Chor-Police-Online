@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useSocketStore } from "../store/socketStore";
 import { useRoomStore } from "../store/roomStore";
 import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
+import { RoyalPanel } from "../components/ui/RoyalPanel";
 import { Input } from "../components/ui/Input";
 import { SocketEvents } from "../../shared/socket/events";
 import { saveSession } from "../utils/session";
@@ -64,13 +64,13 @@ export function JoinRoom() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-sm"
+        className="w-full max-w-md"
       >
-        <Card>
+        <RoyalPanel className="p-8 sm:p-10">
           <h2 className="text-2xl font-bold text-center mb-6 gold-gradient">
             Join Room
           </h2>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Input
               label="Your Name"
               placeholder="Enter your name"
@@ -103,7 +103,7 @@ export function JoinRoom() {
             )}
             <Button
               type="submit"
-              variant="gold"
+              variant="gold-gradient"
               size="lg"
               fullWidth
               disabled={!isValid || loading || status !== "connected"}
@@ -120,7 +120,7 @@ export function JoinRoom() {
           >
             Back
           </Button>
-        </Card>
+        </RoyalPanel>
       </motion.div>
     </div>
   );
