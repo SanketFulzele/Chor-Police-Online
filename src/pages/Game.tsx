@@ -11,7 +11,6 @@ import { useGame } from "../hooks/useGame";
 import { GameCard } from "../components/game/Card";
 import { PlayerList } from "../components/game/PlayerList";
 import { ShuffleAnimation } from "../components/game/ShuffleAnimation";
-import { RoleIcon } from "../components/game/RoleIcon";
 import { IdentifyChorModal } from "../components/game/IdentifyChorModal";
 import { VictoryScreen } from "../components/game/victory/VictoryScreen";
 import { RankingList } from "../components/game/victory/RankingList";
@@ -112,6 +111,7 @@ export function GamePage() {
   }
 
   const rajaRevealed = room.players.some((p) => p.publicRole === "raja");
+  const mantriRevealed = room.players.some((p) => p.publicRole === "mantri");
 
   const hiddenPlayers = room.players.filter(
     (p) => p.publicRole !== "raja" && p.publicRole !== "mantri" && p.id !== playerId
@@ -135,7 +135,6 @@ export function GamePage() {
   };
 
   const isGameplayPhase = phase && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase);
-  const isCardReveal = phase === "card-reveal";
 
   const leaderboardRows = toRows(room.roundHistory);
   const leaderboardRanked = rankPlayers(room.players, currentTotals, leaderboardRows);
@@ -146,7 +145,7 @@ export function GamePage() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className={`w-full space-y-6 text-center ${phase === "leaderboard" || phase === "finished" || isCardReveal ? "max-w-5xl" : "max-w-lg"}`}
+        className={`w-full space-y-6 text-center ${phase === "leaderboard" || phase === "finished" || isGameplayPhase ? "max-w-5xl" : "max-w-lg"}`}
       >
         {phase === "card-reveal" ? (
           <div className="space-y-3">
@@ -171,7 +170,6 @@ export function GamePage() {
             <h2 className="text-2xl font-bold gold-gradient">
               {phase === "shuffling" && "Shuffling Cards..."}
               {phase === "card-distribution" && "Cards Distributed"}
-              {phase === "card-reveal" && "Your Card"}
               {phase === "leaderboard" && "Leaderboard"}
               {phase === "waiting" && "Ready to Play"}
             </h2>
@@ -181,8 +179,8 @@ export function GamePage() {
           </div>
         )}
 
-        {/* Phase: card-reveal (horizontal layout) */}
-        {isCardReveal && (
+        {/* Gameplay: horizontal two-column layout (consistent across all gameplay phases) */}
+        {isGameplayPhase && (
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-stretch gap-5 lg:gap-6 text-left">
             {/* Left: player list */}
             <RoyalPanel className="flex flex-col p-5 sm:p-6">
@@ -216,12 +214,24 @@ export function GamePage() {
                 </p>
               )}
 
-              {myRole === "raja" && rajaRevealed && (
+              {myRole === "raja" && rajaRevealed && !mantriRevealed && (
                 <Button
                   className="mt-4 gold-gradient text-black font-bold"
                   onClick={askForMantri}
                 >
                   Ask: Who is my Mantri?
+                </Button>
+              )}
+
+              {myRole === "mantri" && phase === "guessing" && (
+                <Button
+                  className="mt-4 w-full gold-gradient text-black font-bold"
+                  onClick={() => {
+                    const modal = document.getElementById("mantri-modal");
+                    if (modal) modal.classList.remove("hidden");
+                  }}
+                >
+                  Identify the Chor
                 </Button>
               )}
 
@@ -234,58 +244,6 @@ export function GamePage() {
                 </p>
               </div>
             </RoyalPanel>
-          </div>
-        )}
-
-        {/* Persistent player list during gameplay */}
-        {isGameplayPhase && !isCardReveal && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {room.players.map((p) => {
-              const isPublicRaja = p.publicRole === "raja";
-              const isPublicMantri = p.publicRole === "mantri";
-              const isYou = p.id === playerId;
-              return (
-                <div
-                  key={p.id}
-                  className={`relative rounded-2xl border px-3.5 py-2.5 flex items-center gap-3 transition-all duration-300 ${
-                    isYou
-                      ? "border-gold/50 bg-gradient-to-br from-gold/[0.12] via-surface/80 to-transparent shadow-[0_0_25px_rgba(255,215,0,0.12)]"
-                      : "border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.05] hover:border-white/[0.12]"
-                  }`}
-                >
-                  <div className="relative shrink-0">
-                    <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border ${
-                        isYou ? "border-gold/60" : "border-white/10"
-                      }`}
-                      style={{ backgroundColor: p.avatarColor }}
-                    >
-                      {p.name.charAt(0).toUpperCase()}
-                    </div>
-                    {isYou && (
-                      <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-wider bg-gold text-black px-1.5 py-px rounded-full whitespace-nowrap">
-                        You
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-semibold truncate">{p.name}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {isPublicRaja && (
-                      <span className="text-xs font-bold text-gold flex items-center gap-1.5">
-                        <RoleIcon role="raja" className="w-5 h-5" /> Raja
-                      </span>
-                    )}
-                    {isPublicMantri && (
-                      <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
-                        <RoleIcon role="mantri" className="w-5 h-5" /> Mantri
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
           </div>
         )}
 
@@ -335,56 +293,6 @@ export function GamePage() {
           <RoyalPanel decorativeCorners className="px-6 py-8">
             <ShuffleAnimation />
             <p className="mt-2 text-center text-sm text-text-muted">Shuffling and dealing cards...</p>
-          </RoyalPanel>
-        )}
-
-        {/* Persistent role card - always available during gameplay */}
-        {myRole && phase && phase !== "card-reveal" && !["waiting", "shuffling", "card-distribution", "leaderboard", "finished", null].includes(phase) && (
-          <RoyalPanel decorativeCorners className="px-5 py-8 sm:px-8">
-            <div className="space-y-6">
-              <GameCard
-                role={myRole}
-                revealed={hasRevealed && !hasHidden}
-                onReveal={revealCard}
-                onHide={hideCard}
-              />
-
-              {myRole === "raja" && hasRevealed && !hasHidden && !rajaRevealed && (
-                <p className="text-sm text-yellow-400">
-                  Raja revealed! Other players can now see who you are.
-                </p>
-              )}
-
-              {myRole === "raja" && rajaRevealed && phase === "card-reveal" && (
-                <Button
-                  className="gold-gradient text-black font-bold"
-                  onClick={askForMantri}
-                >
-                  Ask: Who is my Mantri?
-                </Button>
-              )}
-
-              {myRole === "mantri" && phase === "guessing" && (
-                <Button
-                  className="w-full gold-gradient text-black font-bold"
-                  onClick={() => {
-                    const modal = document.getElementById("mantri-modal");
-                    if (modal) modal.classList.remove("hidden");
-                  }}
-                >
-                  Identify the Chor
-                </Button>
-              )}
-
-              <div className="flex items-start gap-3 rounded-2xl border border-gold/20 bg-gold/[0.04] px-4 py-3 text-left">
-                <CrownIcon className="w-5 h-5 text-gold shrink-0 mt-0.5" />
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  Keep your role a secret! Only the{" "}
-                  <span className="text-gold font-semibold">Raja</span> is revealed publicly.
-                  Click the card or use the buttons to peek and hide.
-                </p>
-              </div>
-            </div>
           </RoyalPanel>
         )}
 
