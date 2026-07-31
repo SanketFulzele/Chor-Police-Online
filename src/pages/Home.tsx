@@ -51,7 +51,7 @@ export function Home() {
             <span className="text-3xl">👑</span>
           </motion.div>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-[0.18em] gold-gradient text-glow leading-none">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-[0.15em] gold-gradient text-glow leading-none">
             CHOR&nbsp;POLICE
           </h1>
 
