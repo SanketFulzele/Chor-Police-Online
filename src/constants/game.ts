@@ -1,14 +1,6 @@
 import type { GameRole } from "../types";
 import { ALL_ROLES, MAX_PLAYERS, MIN_PLAYERS } from "../game/roles";
-import backcard from "../assets/backcard.jpg";
-import raja from "../assets/raja.jpg";
-import police from "../assets/police.jpg";
-import sipahi from "../assets/sipahi.jpg";
-import chor from "../assets/chor.jpg";
-import daku from "../assets/daku.svg";
-import joker from "../assets/joker.svg";
-import aamAadmi from "../assets/aam-aadmi.svg";
-import jasoos from "../assets/jasoos.svg";
+import { characterAssets } from "../assets/characterAssets";
 
 export { MAX_PLAYERS, MIN_PLAYERS, ALL_ROLES };
 
@@ -57,16 +49,18 @@ export const ROLE_COLORS: Record<GameRole, string> = {
 };
 
 export const CARD_IMAGES: Record<GameRole, string> & { hidden: string } = {
-  hidden: backcard,
-  raja,
-  police,
-  sipahi,
-  chor,
-  daku,
-  joker,
-  "aam-aadmi": aamAadmi,
-  jasoos,
+  hidden: characterAssets.BACK,
+  raja: characterAssets.RAJA,
+  police: characterAssets.POLICE,
+  sipahi: characterAssets.SIPAHI,
+  chor: characterAssets.CHOR,
+  daku: characterAssets.DAKU,
+  joker: characterAssets.JOKER,
+  "aam-aadmi": characterAssets.AAM_AADMI,
+  jasoos: characterAssets.JASOOS,
 };
+
+export { characterAssets };
 
 export const ROOM_CODE_LENGTH = 6;
 
