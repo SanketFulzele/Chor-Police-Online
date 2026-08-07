@@ -10,7 +10,7 @@ import {
   startGame,
   revealCard,
   hideCard,
-  callMantri,
+  callPolice,
   submitGuess,
   nextRound,
   advanceToPhase,
@@ -102,14 +102,14 @@ export function registerGameHandlers(io: Server) {
       emitResult(room, result, io, socket);
     });
 
-    // ========== CALL MANTRI ==========
+    // ========== CALL POLICE ==========
 
-    socket.on(SocketEvents.CALL_MANTRI, (_payload?: unknown) => {
+    socket.on(SocketEvents.CALL_POLICE, (_payload?: unknown) => {
       const ctx = getPlayerBySocketId(socket.id);
       if (!ctx) return;
 
       const { room, player } = ctx;
-      const result = callMantri(room, player);
+      const result = callPolice(room, player);
       emitResult(room, result, io, socket);
     });
 

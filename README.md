@@ -1,6 +1,6 @@
 # Chor Police Online
 
-A modern multiplayer version of the classic Indian game **Chor Police** (Raja Mantri Chor Sipahi). Play with friends in real-time — no accounts required.
+A modern multiplayer version of the classic Indian game **Chor Police** (Raja Police Chor Sipahi). Play with friends in real-time — no accounts required.
 
 ---
 

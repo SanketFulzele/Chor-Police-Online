@@ -48,12 +48,12 @@ export function canProceedFromReveal(
 }
 
 /**
- * Checks if the Mantri can make a guess.
+ * Checks if the Police can make a guess.
  */
 export function canGuess(
   _phase: GamePhase,
   _playerId: string,
-  _mantriId: string
+  _policeId: string
 ): ValidationResult {
   // TODO: Implement in Batch 4
   return { valid: false, error: "Not implemented", code: "NOT_IMPLEMENTED" };

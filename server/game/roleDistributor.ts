@@ -1,7 +1,7 @@
 import type { GameRole } from "../shared/socket/types.js";
 import type { RoleDistribution, RoleHistory } from "./types";
 
-const ROLES: GameRole[] = ["raja", "mantri", "chor", "sipahi"];
+const ROLES: GameRole[] = ["raja", "police", "chor", "sipahi"];
 
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr];

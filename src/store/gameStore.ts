@@ -12,14 +12,14 @@ export interface RoundResultData {
   isCorrect: boolean;
   scores: Record<string, number>;
   roles: Record<string, GameRole>;
-  mantriId: string;
+  policeId: string;
   chosenId: string;
 }
 
 export interface RoundHistoryItem {
   roundNumber: number;
   roles: Record<string, GameRole>;
-  mantriId: string;
+  policeId: string;
   chosenId: string;
   isCorrect: boolean;
   scores: Record<string, number>;
@@ -34,7 +34,7 @@ interface GameState {
   revealedPlayers: string[];
   hiddenPlayers: string[];
   isShuffling: boolean;
-  mantriId: string | null;
+  policeId: string | null;
   rajaRevealedPlayerId: string | null;
   showResult: { isCorrect: boolean } | null;
   revealedRoles: Record<string, GameRole> | null;
@@ -55,7 +55,7 @@ interface GameState {
   addRevealedPlayer: (playerId: string) => void;
   addHiddenPlayer: (playerId: string) => void;
   setShuffling: (v: boolean) => void;
-  setMantriId: (id: string | null) => void;
+  setPoliceId: (id: string | null) => void;
   setRajaRevealedPlayerId: (id: string | null) => void;
   setShowResult: (result: { isCorrect: boolean } | null) => void;
   setRevealedRoles: (roles: Record<string, GameRole> | null) => void;
@@ -77,7 +77,7 @@ export const useGameStore = create<GameState>((set) => ({
   revealedPlayers: [],
   hiddenPlayers: [],
   isShuffling: false,
-  mantriId: null,
+  policeId: null,
   rajaRevealedPlayerId: null,
   showResult: null,
   revealedRoles: null,
@@ -108,7 +108,7 @@ export const useGameStore = create<GameState>((set) => ({
         : [...state.hiddenPlayers, playerId],
     })),
   setShuffling: (v) => set({ isShuffling: v }),
-  setMantriId: (id) => set({ mantriId: id }),
+  setPoliceId: (id) => set({ policeId: id }),
   setRajaRevealedPlayerId: (id) => set({ rajaRevealedPlayerId: id }),
   setShowResult: (result) => set({ showResult: result }),
   setRevealedRoles: (roles) => set({ revealedRoles: roles }),
@@ -133,7 +133,7 @@ export const useGameStore = create<GameState>((set) => ({
       revealedPlayers: [],
       hiddenPlayers: [],
       isShuffling: false,
-      mantriId: null,
+      policeId: null,
       rajaRevealedPlayerId: null,
       showResult: null,
       revealedRoles: null,
@@ -152,7 +152,7 @@ export const useGameStore = create<GameState>((set) => ({
       revealedPlayers: [],
       hiddenPlayers: [],
       isShuffling: false,
-      mantriId: null,
+      policeId: null,
       rajaRevealedPlayerId: null,
       showResult: null,
       revealedRoles: null,

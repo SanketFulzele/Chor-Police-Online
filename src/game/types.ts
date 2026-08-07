@@ -12,7 +12,7 @@ export type GamePhase =
   | "card-hidden"
   | "waiting-raja"
   | "raja-calling"
-  | "mantri-reveal"
+  | "police-reveal"
   | "guessing"
   | "reveal-roles"
   | "score-update"
@@ -34,7 +34,7 @@ export interface PhaseTransition {
 export interface RoundResult {
   roundNumber: number;
   roles: Record<string, GameRole>;
-  mantriId: string;
+  policeId: string;
   chosenId: string;
   isCorrect: boolean;
   scores: Record<string, number>;
@@ -49,7 +49,7 @@ export interface GameState {
   roundNumber: number;
   players: GamePlayer[];
   roleAssignment: RoleDistribution | null;
-  mantriId: string | null;
+  policeId: string | null;
   chosenId: string | null;
   roundHistory: RoundResult[];
   startedAt: number | null;
@@ -110,7 +110,7 @@ export interface LeaderboardEntry {
  * Input for the score calculator.
  */
 export interface ScoreInput {
-  mantriId: string;
+  policeId: string;
   chosenId: string;
   roles: Record<string, GameRole>;
 }

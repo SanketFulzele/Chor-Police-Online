@@ -176,7 +176,7 @@ function buildAchievements(playerId: string, stats: StatsShape, rows: RoundRow[]
     badges.push({
       id: "master-chor",
       title: "Master Chor",
-      description: `Escaped the Mantri ${evaded} time${evaded === 1 ? "" : "s"}`,
+      description: `Escaped the Police ${evaded} time${evaded === 1 ? "" : "s"}`,
       icon: <IconEyeSlash className="h-4 w-4" />,
       accent: "border-rose/40 bg-rose/15 text-rose-400",
     });

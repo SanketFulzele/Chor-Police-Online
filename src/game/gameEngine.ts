@@ -37,7 +37,7 @@ export interface EngineResult {
 
 const PHASE_DELAYS: Partial<Record<GamePhase, number>> = {
   shuffling: 2500,
-  "mantri-reveal": 2000,
+  "police-reveal": 2000,
   "reveal-roles": 3000,
   "score-update": 2000,
 };
@@ -221,37 +221,37 @@ export function hideCard(room: Room, player: Player): EngineResult {
 }
 
 /**
- * Raja clicks "Ask: Who is my Mantri?" — reveals the Mantri to everyone.
+ * Raja clicks "Call the Police" — reveals the Police to everyone.
  */
-export function callMantri(room: Room, player: Player, _chosenId?: string): EngineResult {
+export function callPolice(room: Room, player: Player, _chosenId?: string): EngineResult {
   const phaseErr = validatePhase(room, "card-reveal");
   if (phaseErr) return phaseErr;
 
   if (player.currentRole !== "raja") {
-    return invalid("Only the Raja can ask for the Mantri", "NOT_RAJA");
+    return invalid("Only the Raja can call the Police", "NOT_RAJA");
   }
 
-  const mantri = room.players.find((p) => p.currentRole === "mantri");
-  if (!mantri) {
-    return invalid("Mantri not found", "MANTRI_NOT_FOUND");
+  const police = room.players.find((p) => p.currentRole === "police");
+  if (!police) {
+    return invalid("Police not found", "POLICE_NOT_FOUND");
   }
-  if (!mantri.isConnected) {
-    return invalid("Mantri disconnected", "MANTRI_DISCONNECTED");
+  if (!police.isConnected) {
+    return invalid("Police disconnected", "POLICE_DISCONNECTED");
   }
 
-  mantri.publicRole = "mantri";
-  room.mantriId = mantri.id;
-  room.phase = "mantri-reveal";
+  police.publicRole = "police";
+  room.policeId = police.id;
+  room.phase = "police-reveal";
 
   const events: EngineEvent[] = [
-    { event: SocketEvents.PHASE_CHANGED, payload: { phase: "mantri-reveal" } },
-    { event: SocketEvents.MANTRI_REVEALED, payload: { mantriId: mantri.id } },
+    { event: SocketEvents.PHASE_CHANGED, payload: { phase: "police-reveal" } },
+    { event: SocketEvents.POLICE_REVEALED, payload: { policeId: police.id } },
   ];
 
   const schedule: ScheduledEvent[] = [
     {
-      delay: PHASE_DELAYS["mantri-reveal"]!,
-      fromPhase: "mantri-reveal",
+      delay: PHASE_DELAYS["police-reveal"]!,
+      fromPhase: "police-reveal",
       phase: "guessing",
       events: [{ event: SocketEvents.PHASE_CHANGED, payload: { phase: "guessing" } }],
     },
@@ -261,30 +261,30 @@ export function callMantri(room: Room, player: Player, _chosenId?: string): Engi
 }
 
 /**
- * Mantri submits their guess for who the Chor is.
+ * Police submits their guess for who the Chor is.
  * Calculates scores, transitions through reveal-roles → score-update → leaderboard.
  */
 export function submitGuess(room: Room, player: Player, chosenId: string): EngineResult {
   const phaseErr = validatePhase(room, "guessing");
   if (phaseErr) return phaseErr;
 
-  if (player.currentRole !== "mantri") {
-    return invalid("Only the Mantri can guess", "NOT_MANTRI");
+  if (player.currentRole !== "police") {
+    return invalid("Only the Police can guess", "NOT_POLICE");
   }
 
   const target = room.players.find((p) => p.id === chosenId);
   if (!target) {
     return invalid("Invalid player", "INVALID_TARGET");
   }
-  if (target.currentRole === "raja" || target.currentRole === "mantri") {
-    return invalid("Cannot guess Raja or Mantri", "INVALID_TARGET");
+  if (target.currentRole === "raja" || target.currentRole === "police") {
+    return invalid("Cannot guess Raja or Police", "INVALID_TARGET");
   }
   if (!target.isConnected) {
     return invalid("Player disconnected", "TARGET_DISCONNECTED");
   }
 
   const roles = getRoleMap(room);
-  const { scores, isCorrect } = calculateScores({ mantriId: room.mantriId!, chosenId, roles });
+  const { scores, isCorrect } = calculateScores({ policeId: room.policeId!, chosenId, roles });
 
   for (const p of room.players) {
     p.currentScore = scores[p.id] ?? 0;
@@ -294,7 +294,7 @@ export function submitGuess(room: Room, player: Player, chosenId: string): Engin
   room.roundHistory.push({
     roundNumber: room.round,
     roles,
-    mantriId: room.mantriId!,
+    policeId: room.policeId!,
     chosenId,
     isCorrect,
     scores,
@@ -322,7 +322,7 @@ export function submitGuess(room: Room, player: Player, chosenId: string): Engin
             isCorrect,
             scores,
             roles,
-            mantriId: room.mantriId,
+            policeId: room.policeId,
             chosenId,
           },
         },
@@ -356,7 +356,7 @@ export function nextRound(room: Room, player: Player): EngineResult {
     p.hasHidden = false;
     p.currentScore = 0;
   }
-  room.mantriId = undefined;
+  room.policeId = undefined;
 
   room.round += 1;
   room.phase = "shuffling";
@@ -452,7 +452,7 @@ export function endGame(room: Room, player: Player): EngineResult {
     }
     p.statistics.totalScore += playerStats[p.id].totalScore;
     p.statistics.timesRaja += playerStats[p.id].timesRaja;
-    p.statistics.timesMantri += playerStats[p.id].timesMantri;
+    p.statistics.timesPolice += playerStats[p.id].timesPolice;
     p.statistics.timesChor += playerStats[p.id].timesChor;
     p.statistics.timesSipahi += playerStats[p.id].timesSipahi;
     p.statistics.correctGuesses += playerStats[p.id].correctGuesses;
@@ -478,7 +478,7 @@ export function endGame(room: Room, player: Player): EngineResult {
           roundHistory: room.roundHistory.map((r) => ({
             roundNumber: r.roundNumber,
             roles: r.roles,
-            mantriId: r.mantriId,
+            policeId: r.policeId,
             chosenId: r.chosenId,
             isCorrect: r.isCorrect,
             scores: r.scores,
@@ -497,7 +497,7 @@ export function endGame(room: Room, player: Player): EngineResult {
 export function validateAction(
   room: Room,
   player: Player,
-  action: "start-round" | "reveal-card" | "hide-card" | "call-mantri" | "submit-guess" | "next-round",
+  action: "start-round" | "reveal-card" | "hide-card" | "call-police" | "submit-guess" | "next-round",
   _payload?: unknown
 ): EngineResult | null {
   switch (action) {
@@ -506,7 +506,7 @@ export function validateAction(
     case "reveal-card":
     case "hide-card":
       return validatePhase(room, "card-reveal");
-    case "call-mantri":
+    case "call-police":
       return validatePhase(room, "card-reveal");
     case "submit-guess":
       return validatePhase(room, "guessing");

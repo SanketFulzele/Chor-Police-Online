@@ -1,11 +1,11 @@
-export type GameRole = "raja" | "mantri" | "chor" | "sipahi";
+export type GameRole = "raja" | "police" | "chor" | "sipahi";
 
 export type GamePhase =
   | "waiting"
   | "shuffling"
   | "card-distribution"
   | "card-reveal"
-  | "mantri-reveal"
+  | "police-reveal"
   | "guessing"
   | "reveal-roles"
   | "score-update"
@@ -18,7 +18,7 @@ export interface PlayerStatistics {
   highestScore: number;
   totalScore: number;
   timesRaja: number;
-  timesMantri: number;
+  timesPolice: number;
   timesChor: number;
   timesSipahi: number;
   correctGuesses: number;
@@ -48,7 +48,7 @@ export interface Player {
 export interface RoundHistoryEntry {
   roundNumber: number;
   roles: Record<string, GameRole>;
-  mantriId: string;
+  policeId: string;
   chosenId: string;
   isCorrect: boolean;
   scores: Record<string, number>;
@@ -61,7 +61,7 @@ export interface Room {
   phase: GamePhase;
   round: number;
   createdAt: number;
-  mantriId?: string;
+  policeId?: string;
   winnerId?: string;
   winnerName?: string;
   finishedAt?: number;

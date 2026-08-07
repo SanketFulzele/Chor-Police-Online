@@ -40,7 +40,7 @@ export function GamePage() {
   const roundHistory = useGameStore((s) => s.roundHistory);
 
   const {
-    revealCard, hideCard, askForMantri, submitGuess,
+    revealCard, hideCard, askForPolice, submitGuess,
     startGame, nextRound, endGame,
   } = useGame();
 
@@ -83,7 +83,7 @@ export function GamePage() {
         roundHistory: roundHistory.map((r) => ({
           round: r.roundNumber,
           roles: r.roles,
-          mantriId: r.mantriId,
+          policeId: r.policeId,
           chosenId: r.chosenId,
           correct: r.isCorrect,
           scores: r.scores,
@@ -113,10 +113,10 @@ export function GamePage() {
   }
 
   const rajaRevealed = room.players.some((p) => p.publicRole === "raja");
-  const mantriRevealed = room.players.some((p) => p.publicRole === "mantri");
+  const policeRevealed = room.players.some((p) => p.publicRole === "police");
 
   const hiddenPlayers = room.players.filter(
-    (p) => p.publicRole !== "raja" && p.publicRole !== "mantri" && p.id !== playerId
+    (p) => p.publicRole !== "raja" && p.publicRole !== "police" && p.id !== playerId
   );
 
   const handleCancelGuess = () => {
@@ -212,16 +212,16 @@ export function GamePage() {
                 </p>
               )}
 
-              {myRole === "raja" && rajaRevealed && !mantriRevealed && (
+              {myRole === "raja" && rajaRevealed && !policeRevealed && (
                 <Button
                   className="mt-4 gold-gradient text-black font-bold"
-                  onClick={askForMantri}
+                  onClick={askForPolice}
                 >
-                  Ask: Who is my Mantri?
+                  Call the Police
                 </Button>
               )}
 
-              {myRole === "mantri" && phase === "guessing" && (
+              {myRole === "police" && phase === "guessing" && (
                 <Button
                   className="mt-4 w-full gold-gradient text-black font-bold"
                   onClick={() => setModalOpen(true)}
@@ -291,7 +291,7 @@ export function GamePage() {
           </RoyalPanel>
         )}
 
-        {/* Mantri popup modal */}
+        {/* Police popup modal */}
         <IdentifyChorModal
           open={modalOpen}
           hiddenPlayers={hiddenPlayers}

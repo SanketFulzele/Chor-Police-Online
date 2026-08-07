@@ -6,11 +6,11 @@ import { PremiumBackground } from "../components/layout/PremiumBackground";
 import { CARD_IMAGES, ROLE_LABELS, ROLE_COLORS } from "../constants/game";
 import type { GameRole } from "../types";
 
-const ROLES: GameRole[] = ["raja", "mantri", "sipahi", "chor"];
+const ROLES: GameRole[] = ["raja", "police", "sipahi", "chor"];
 
 const ROLE_GLOWS: Record<GameRole, string> = {
   raja: "rgba(255, 215, 0, 0.28)",
-  mantri: "rgba(124, 58, 237, 0.34)",
+  police: "rgba(124, 58, 237, 0.34)",
   sipahi: "rgba(245, 158, 11, 0.28)",
   chor: "rgba(239, 68, 68, 0.28)",
 };

@@ -52,7 +52,7 @@ function reconstructGameState(room: Room, myRole?: GameRole) {
   gameStore.setPhase(room.phase);
   gameStore.setRound(room.round);
   if (myRole) gameStore.setMyRole(myRole);
-  if (room.mantriId) gameStore.setMantriId(room.mantriId);
+  if (room.policeId) gameStore.setPoliceId(room.policeId);
 
   const scores: Record<string, number> = {};
   const totals: Record<string, number> = {};

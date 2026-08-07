@@ -16,7 +16,7 @@ interface PlayerStatCardProps {
 
 const ROLE_KEYS: { key: keyof StatsShape; role: GameRole }[] = [
   { key: "timesRaja", role: "raja" },
-  { key: "timesMantri", role: "mantri" },
+  { key: "timesPolice", role: "police" },
   { key: "timesChor", role: "chor" },
   { key: "timesSipahi", role: "sipahi" },
 ];

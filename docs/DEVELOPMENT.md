@@ -246,10 +246,10 @@ Socket IDs change on reconnection. Player IDs need to be stable across reconnect
 - [x] Client-side game store and game-specific hooks
 - [x] Game page real-time UI with player cards
 
-### Batch 4 — Game Flow (Raja → Mantri → Chor) ✅
-- [x] Raja calls Mantri phase
-- [x] Mantri reveal animation
-- [x] Mantri chooses Chor (player selection UI with confirm)
+### Batch 4 — Game Flow (Raja → Police → Chor) ✅
+- [x] Raja calls Police phase
+- [x] Police reveal animation
+- [x] Police chooses Chor (player selection UI with confirm)
 - [x] Result calculation and scoring
 - [x] Score update + leaderboard
 - [x] Next round
@@ -291,7 +291,7 @@ Socket IDs change on reconnection. Player IDs need to be stable across reconnect
 - `utils/` directory is empty (no utility functions extracted yet)
 - Server has no persistence — all rooms are lost on server restart
 - No rate limiting on room creation — a client could spam `create-room`
-- No guess timeout — Mantri can take unlimited time to guess
+- No guess timeout — Police can take unlimited time to guess
 - `destroyRoom` in roomManager is unused (rooms are cleaned up when all players leave via `leaveRoom`)
 - Room code is passed via URL search params — not secure, should use socket state in production
 
@@ -328,7 +328,7 @@ Socket IDs change on reconnection. Player IDs need to be stable across reconnect
 
 **Changed**
 - `src/game/gameEngine.ts` — Complete rewrite from 72 lines to 377 lines. Now contains ALL gameplay logic:
-  - Validation: `revealCard`, `hideCard`, `callMantri`, `submitGuess`, `startGame`, `nextRound` all self-validate
+  - Validation: `revealCard`, `hideCard`, `callPolice`, `submitGuess`, `startGame`, `nextRound` all self-validate
   - Execution: each action mutates the `Room`/`Player` objects directly and returns typed events to emit
   - Scheduling: returns `ScheduledEvent[]` for timed phase transitions (shuffling → card-distribution, reveal-roles → score-update → leaderboard)
   - Phase advancement: `advanceToPhase(room, phase)` uses `canTransition()` from `gameStateMachine.ts` and auto-handles role distribution when leaving shuffling
@@ -378,7 +378,7 @@ socket.on(EVENT, (payload) => {
 
 **Added**
 - `src/game/winnerCalculator.ts` — Fully implemented `calculateLeaderboard()`, `determineWinner()`, `buildGameResult()`, `hasTie()`. Leaderboard sorts by total score descending. Role counts tracked per player. `buildGameResult()` returns full `GameResult` with winner, leaderboard, round history, and timestamp.
-- `src/game/statisticsManager.ts` — Fully implemented `calculatePlayerStats()` and `countRoles()`. Tracks: games played, wins, highest score, total score, per-role counts, correct/wrong guesses as Mantri. Used by `endGame()` to update per-player lifetime statistics.
+- `src/game/statisticsManager.ts` — Fully implemented `calculatePlayerStats()` and `countRoles()`. Tracks: games played, wins, highest score, total score, per-role counts, correct/wrong guesses as Police. Used by `endGame()` to update per-player lifetime statistics.
 - `src/game/gameEngine.ts` — Added `endGame()` function: validates host + leaderboard phase, sets phase to `finished`, pushes `GAME_OVER` event with winner, leaderboard, player statistics, and round history. Push to `room.roundHistory` added in `submitGuess()`. `validateAction()` updated with new action types.
 - `shared/socket/events.ts` — Added `GAME_OVER`, `RECONNECT`, `PLAYER_RECONNECTED`, `RECONNECT_STATE`, `PLAYER_DISCONNECTED` events.
 - `shared/socket/payloads.ts` — Added `GameOverPayload`, `ReconnectPayload`, `ReconnectStatePayload`, `PlayerReconnectedPayload`, `PlayerDisconnectedPayload`. Updated `SocketPayloadMap` with all new event → payload mappings. Added import for `PlayerStatistics`.
@@ -404,39 +404,39 @@ socket.on(EVENT, (payload) => {
 **Removed**
 - Technical debt entries from Known Issues: "No end-game flow", "No winner announcement or game history", "`getRoomBySocketId` and `updatePlayerSocket` exported but unused" (now in use), "No error boundary".
 
-### Batch 4 — 2026-07-30 — Raja → Mantri → Guess → Round Result
+### Batch 4 — 2026-07-30 — Raja → Police → Guess → Round Result
 
 **Added**
 - Complete around game flow from card hide through leaderboard and next round
 - Server auto-detects Raja when all cards hidden and transitions to `raja-calling`
-- Raja selects Mantri via `call-mantri` event (validated: correct phase, is Raja, valid target)
-- Mantri identity broadcast to all players via `mantri-revealed` event
-- Mantri guesses Chor/Sipahi via `submit-guess` event with confirmation UI (tap → confirm)
-- Server validates guess (correct phase, is Mantri, valid target, not Raja/Mantri)
+- Raja selects Police via `call-police` event (validated: correct phase, is Raja, valid target)
+- Police identity broadcast to all players via `police-revealed` event
+- Police guesses Chor/Sipahi via `submit-guess` event with confirmation UI (tap → confirm)
+- Server validates guess (correct phase, is Police, valid target, not Raja/Police)
 - All roles revealed simultaneously via `roles-revealed` event
-- `scoreCalculator.ts` — fully implemented scoring logic (Correct: Raja +1000, Mantri +500, Sipahi +300, Chor +0; Wrong: Raja +1000, Mantri +0, Sipahi +300, Chor +500)
+- `scoreCalculator.ts` — fully implemented scoring logic (Correct: Raja +1000, Police +500, Sipahi +300, Chor +0; Wrong: Raja +1000, Police +0, Sipahi +300, Chor +500)
 - Server-side scoring (calculateScores, accumulateScores) called from gameHandler
 - Round result screen with per-player scores and totals
 - Leaderboard sorted by score with medal animations
 - Host "Next Round" button triggers fair role redistribution via gameHandler
-- Shared socket events for Batch 4: `CALL_MANTRI`, `MANTRI_REVEALED`, `SUBMIT_GUESS`, `GUESS_SUBMITTED`, `ROLES_REVEALED`, `ROUND_RESULT`, `SCORE_UPDATED`, `LEADERBOARD_UPDATED`, `NEXT_ROUND_STARTED`
-- Shared payloads for all new events (CallMantriPayload, MantriRevealedPayload, SubmitGuessPayload, GuessSubmittedPayload, RolesRevealedPayload, RoundResultPayload, ScoreUpdatedPayload, LeaderboardUpdatedPayload, NextRoundStartedPayload)
-- `mantriId` field added to shared Room type
-- Client game store (`gameStore.ts`) — added mantriId, revealedRoles, lastRoundResult, currentScores, currentTotals, leaderboard with setters
-- Client game hook (`useGame.ts`) — all new event listeners + `callMantri()`, `submitGuess()`, `nextRound()` actions
+- Shared socket events for Batch 4: `CALL_POLICE`, `POLICE_REVEALED`, `SUBMIT_GUESS`, `GUESS_SUBMITTED`, `ROLES_REVEALED`, `ROUND_RESULT`, `SCORE_UPDATED`, `LEADERBOARD_UPDATED`, `NEXT_ROUND_STARTED`
+- Shared payloads for all new events (CallPolicePayload, PoliceRevealedPayload, SubmitGuessPayload, GuessSubmittedPayload, RolesRevealedPayload, RoundResultPayload, ScoreUpdatedPayload, LeaderboardUpdatedPayload, NextRoundStartedPayload)
+- `policeId` field added to shared Room type
+- Client game store (`gameStore.ts`) — added policeId, revealedRoles, lastRoundResult, currentScores, currentTotals, leaderboard with setters
+- Client game hook (`useGame.ts`) — all new event listeners + `callPolice()`, `submitGuess()`, `nextRound()` actions
 - Game.tsx — complete phase-based rendering for all 7 new phases:
-  - `waiting-raja` / `raja-calling`: Raja sees player list to choose Mantri; others see waiting
-  - `mantri-reveal`: Scale-in spotlight animation of Mantri identity
-  - `guessing`: Mantri sees Chor/Sipahi selection with confirm flow; others see waiting
+  - `waiting-raja` / `raja-calling`: Raja sees player list to choose Police; others see waiting
+  - `police-reveal`: Scale-in spotlight animation of Police identity
+  - `guessing`: Police sees Chor/Sipahi selection with confirm flow; others see waiting
   - `reveal-roles`: All roles shown with flip animation
   - `score-update`: Correct/Wrong badge + per-player score breakdown
   - `leaderboard`: Sorted leaderboard with medal emojis + Next Round button for host
 
 **Changed**
-- `server/src/gameHandler.ts` — Complete rewrite of all game phase transitions. Now handles `call-mantri`, `submit-guess`, `next-round` events. Auto-advances through reveal-roles → score-update → leaderboard with timed transitions. Removed unused `_canTransition`, `_getNextPhase`, and `_TRANSITIONS` (transition logic is now hardcoded in event handlers).
+- `server/src/gameHandler.ts` — Complete rewrite of all game phase transitions. Now handles `call-police`, `submit-guess`, `next-round` events. Auto-advances through reveal-roles → score-update → leaderboard with timed transitions. Removed unused `_canTransition`, `_getNextPhase`, and `_TRANSITIONS` (transition logic is now hardcoded in event handlers).
 - `shared/socket/events.ts` — Added 10 new event constants for Batch 4 game phases
 - `shared/socket/payloads.ts` — Added 10 new typed payload interfaces
-- `shared/socket/types.ts` — Added `mantriId` to Room interface
+- `shared/socket/types.ts` — Added `policeId` to Room interface
 - `shared/socket/index.ts` — Re-exported all new payload types
 - `src/pages/Game.tsx` — Replaced placeholder phase renderers with full game UI for all phases. Added `GuessButton` component with tap → confirm flow.
 - `src/store/gameStore.ts` — Expanded with RoundResultData interface and leaderboard/result state
@@ -450,8 +450,8 @@ socket.on(EVENT, (payload) => {
 - The guess confirmation UI (tap → confirm) prevents misclicks without requiring complex undo logic.
 
 **Known limitations**
-- No disconnect handling during active game phases (raja disconnect, mantri disconnect)
-- No guess timeout — mantri can take unlimited time
+- No disconnect handling during active game phases (raja disconnect, police disconnect)
+- No guess timeout — police can take unlimited time
 - No end-game flow — the game continues indefinitely with Next Round
 - No winner announcement or game history
 

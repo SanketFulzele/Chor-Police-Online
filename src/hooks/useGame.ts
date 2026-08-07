@@ -17,7 +17,7 @@ export function useGame() {
   const addHiddenPlayer = useGameStore((s) => s.addHiddenPlayer);
   const setHasRevealed = useGameStore((s) => s.setHasRevealed);
   const setHasHidden = useGameStore((s) => s.setHasHidden);
-  const setMantriId = useGameStore((s) => s.setMantriId);
+  const setPoliceId = useGameStore((s) => s.setPoliceId);
   const setRajaRevealedPlayerId = useGameStore((s) => s.setRajaRevealedPlayerId);
   const setShowResult = useGameStore((s) => s.setShowResult);
   const setRevealedRoles = useGameStore((s) => s.setRevealedRoles);
@@ -64,8 +64,8 @@ export function useGame() {
       if (payload.isCorrect !== undefined) setShowResult({ isCorrect: payload.isCorrect });
     };
 
-    const handleMantriRevealed = (payload: { mantriId?: string }) => {
-      if (payload.mantriId) setMantriId(payload.mantriId);
+    const handlePoliceRevealed = (payload: { policeId?: string }) => {
+      if (payload.policeId) setPoliceId(payload.policeId);
     };
 
     const handleRolesRevealed = (payload: { roles?: Record<string, GameRole> }) => {
@@ -77,7 +77,7 @@ export function useGame() {
       isCorrect?: boolean;
       scores?: Record<string, number>;
       roles?: Record<string, GameRole>;
-      mantriId?: string;
+      policeId?: string;
       chosenId?: string;
     }) => {
       if (payload.roundNumber !== undefined && payload.scores && payload.roles) {
@@ -86,7 +86,7 @@ export function useGame() {
           isCorrect: payload.isCorrect ?? false,
           scores: payload.scores,
           roles: payload.roles,
-          mantriId: payload.mantriId ?? "",
+          policeId: payload.policeId ?? "",
           chosenId: payload.chosenId ?? "",
         });
       }
@@ -144,7 +144,7 @@ export function useGame() {
     socket.on(SocketEvents.CARD_HIDDEN, handleCardHidden);
     socket.on(SocketEvents.RAJA_REVEALED, handleRajaRevealed);
     socket.on(SocketEvents.SHOW_RESULT, handleShowResult);
-    socket.on(SocketEvents.MANTRI_REVEALED, handleMantriRevealed);
+    socket.on(SocketEvents.POLICE_REVEALED, handlePoliceRevealed);
     socket.on(SocketEvents.ROLES_REVEALED, handleRolesRevealed);
     socket.on(SocketEvents.ROUND_RESULT, handleRoundResult);
     socket.on(SocketEvents.SCORE_UPDATED, handleScoreUpdated);
@@ -161,7 +161,7 @@ export function useGame() {
       socket.off(SocketEvents.CARD_HIDDEN, handleCardHidden);
       socket.off(SocketEvents.RAJA_REVEALED, handleRajaRevealed);
       socket.off(SocketEvents.SHOW_RESULT, handleShowResult);
-      socket.off(SocketEvents.MANTRI_REVEALED, handleMantriRevealed);
+      socket.off(SocketEvents.POLICE_REVEALED, handlePoliceRevealed);
       socket.off(SocketEvents.ROLES_REVEALED, handleRolesRevealed);
       socket.off(SocketEvents.ROUND_RESULT, handleRoundResult);
       socket.off(SocketEvents.SCORE_UPDATED, handleScoreUpdated);
@@ -173,7 +173,7 @@ export function useGame() {
   }, [
     socket, setMyRole, setPhase, setRound, setShuffling, resetRound,
     addRevealedPlayer, addHiddenPlayer, setHasRevealed, setHasHidden,
-    setMantriId, setRajaRevealedPlayerId, setShowResult, setRevealedRoles,
+    setPoliceId, setRajaRevealedPlayerId, setShowResult, setRevealedRoles,
     setLastRoundResult, setCurrentScores, setCurrentTotals, setLeaderboard, setGameOver,
   ]);
 
@@ -188,8 +188,8 @@ export function useGame() {
     setHasHidden(true);
   };
 
-  const askForMantri = () => {
-    socket?.emit(SocketEvents.CALL_MANTRI);
+  const askForPolice = () => {
+    socket?.emit(SocketEvents.CALL_POLICE);
   };
 
   const submitGuess = (chosenId: string) => {
@@ -211,7 +211,7 @@ export function useGame() {
   return {
     revealCard,
     hideCard,
-    askForMantri,
+    askForPolice,
     submitGuess,
     startGame,
     nextRound,

@@ -96,7 +96,7 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
                 </h3>
                 <p className="text-sm text-text-muted mb-3">There are four roles — every player receives one at random.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {(["raja", "mantri", "sipahi", "chor"] as GameRole[]).map((role) => (
+                  {(["raja", "police", "sipahi", "chor"] as GameRole[]).map((role) => (
                     <div key={role} className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-center">
                       <RoleIcon role={role} className="w-8 h-8 mx-auto block" />
                       <span className="text-xs font-semibold mt-1 block" style={{ color: ROLE_COLORS[role] }}>
@@ -122,9 +122,9 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
                     "The Host starts the game.",
                     "Each player may reveal or hide their own role card at any time.",
                     "When the Raja reveals their card, everyone will know who the Raja is.",
-                    'The Raja clicks "Ask: Who is my Mantri?"',
-                    "The Mantri is revealed to everyone.",
-                    "Only the Mantri receives a popup showing the remaining two hidden players. The Mantri must select the player they believe is the Chor.",
+                    'The Raja clicks "Call the Police".',
+                    "The Police is revealed to everyone.",
+                    "Only the Police receives a popup showing the remaining two hidden players. The Police must select the player they believe is the Chor.",
                     "The result is revealed to everyone — ✅ Correct or ❌ Wrong.",
                     "Scores are awarded. Players may continue to the next round.",
                   ].map((step, i) => (

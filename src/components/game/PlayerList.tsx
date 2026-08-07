@@ -14,7 +14,7 @@ export function PlayerList({ players, playerId }: PlayerListProps) {
       {players.map((p, i) => {
         const isYou = p.id === playerId;
         const isPublicRaja = p.publicRole === "raja";
-        const isPublicMantri = p.publicRole === "mantri";
+        const isPublicPolice = p.publicRole === "police";
         return (
           <motion.div
             key={p.id}
@@ -77,10 +77,10 @@ export function PlayerList({ players, playerId }: PlayerListProps) {
                   Raja
                 </span>
               )}
-              {isPublicMantri && (
+              {isPublicPolice && (
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2 py-1 text-[11px] font-bold text-purple-400">
-                  <RoleIcon role="mantri" className="h-4 w-4" />
-                  Mantri
+                  <RoleIcon role="police" className="h-4 w-4" />
+                  Police
                 </span>
               )}
             </div>

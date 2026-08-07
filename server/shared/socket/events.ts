@@ -25,10 +25,10 @@ export const SocketEvents = {
   CARD_REVEALED: "card-revealed",
   CARD_HIDDEN: "card-hidden",
 
-  // Raja / Mantri phase
-  CALL_MANTRI: "call-mantri",
+  // Raja / Police phase
+  CALL_POLICE: "call-police",
   RAJA_REVEALED: "raja-revealed",
-  MANTRI_REVEALED: "mantri-revealed",
+  POLICE_REVEALED: "police-revealed",
 
   // Result
   SHOW_RESULT: "show-result",

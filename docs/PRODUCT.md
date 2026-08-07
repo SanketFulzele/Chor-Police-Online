@@ -1,6 +1,6 @@
 # Chor Police Online
 
-A modern multiplayer version of the classic Indian game **Chor Police** (also known as *Raja Mantri Chor Sipahi*). Built as a real-time web game with a polished, AAA-quality gaming interface.
+A modern multiplayer version of the classic Indian game **Chor Police** (also known as *Raja Police Chor Sipahi*). Built as a real-time web game with a polished, AAA-quality gaming interface.
 
 ---
 
@@ -119,7 +119,7 @@ The following flow describes the user experience as implemented. Steps marked wi
    ─────────────────────────────────────────────
    - Landing page with title "Chor Police"
    - Two buttons: Create Room, Join Room
-   - Role card display (Raja, Mantri, Sipahi, Chor)
+   - Role card display (Raja, Police, Sipahi, Chor)
    - All glassmorphism cards with gold accents
 
 2. CREATE ROOM
@@ -185,25 +185,25 @@ The following flow describes the user experience as implemented. Steps marked wi
    - Phase: waiting-raja (brief, server-side processing)
    - Raja is auto-identified by the server
    - Phase: raja-calling → Raja sees "You are Raja" + player selection list
-   - Other players see "The Raja is choosing a Mantri..."
-   - Raja clicks a player → emits `call-mantri` with chosen player ID
+   - Other players see "The Raja is choosing the Police..."
+   - Raja clicks a player → emits `call-police` with chosen player ID
    - Server validates: correct phase, caller is Raja, target is valid player
 
-7. MANTRI REVEAL
+7. POLICE REVEAL
    ─────────────────────────────────────────────
-   - Phase: mantri-reveal → Mantri identity broadcast to all via `mantri-revealed`
+   - Phase: police-reveal → Police identity broadcast to all via `police-revealed`
    - Animated reveal: scale-in with role emoji, player avatar, role name
    - All clients synchronized
    - Auto-advances to guessing after 2.5s
 
 8. GUESSING PHASE
    ─────────────────────────────────────────────
-   - Phase: guessing → Only the Mantri can interact
-   - Mantri sees Chor and Sipahi as selectable players (Raja/Mantri excluded)
+   - Phase: guessing → Only the Police can interact
+   - Police sees Chor and Sipahi as selectable players (Raja/Police excluded)
    - Tap to select, then confirm (double-tap flow prevents misclicks)
-   - Other players see "The Mantri is trying to identify the Chor..."
-   - Server validates: correct phase, caller is Mantri, valid target, no duplicates
-   - Invalid targets (Raja, Mantri, disconnected, self) are rejected
+   - Other players see "The Police is trying to identify the Chor..."
+   - Server validates: correct phase, caller is Police, valid target, no duplicates
+   - Invalid targets (Raja, Police, disconnected, self) are rejected
 
 9. REVEAL ROLES & SCORING
    ─────────────────────────────────────────────
@@ -211,8 +211,8 @@ The following flow describes the user experience as implemented. Steps marked wi
    - `roles-revealed` event broadcasts full role map to all players
    - Phase: score-update → Round result displayed (Correct/Wrong)
    - Scoring rules:
-     Correct Guess: Raja +1000, Mantri +500, Sipahi +300, Chor +0
-     Wrong Guess:   Raja +1000, Mantri  +0, Sipahi +300, Chor +500
+     Correct Guess: Raja +1000, Police +500, Sipahi +300, Chor +0
+     Wrong Guess:   Raja +1000, Police  +0, Sipahi +300, Chor +500
    - Score calculation is inside the Game Engine (scoreCalculator.ts)
 
 10. LEADERBOARD & NEXT ROUND
@@ -261,10 +261,10 @@ src/game/
 | File | Responsibility |
 |------|---------------|
 | `types.ts` | All game-specific interfaces: `GamePhase`, `GameState`, `RoundResult`, `RoleDistribution`, `ScoreInput`, `ScoreOutput`, `GameResult`, `LeaderboardEntry`, `ValidationResult` |
-| `gameEngine.ts` | **Single owner of all gameplay rules.** Exports action functions (`startGame`, `revealCard`, `hideCard`, `callMantri`, `submitGuess`, `nextRound`, `endGame`) that each self-validate, mutate the room, and return typed events to emit. Provides `advanceToPhase()` for generic phase transitions with automatic role distribution when leaving `shuffling`. Phase scheduling (timed auto-advancements) returned as `ScheduledEvent[]`. Calls `calculateScores()` from `scoreCalculator.ts`, `distributeRoles()` from `roleDistributor.ts`, `buildGameResult()` from `winnerCalculator.ts`, and `calculatePlayerStats()` from `statisticsManager.ts`. Zero dependencies on React, Socket.IO, or Express. |
-| `gameStateMachine.ts` | Defines all 13 game phases in order (`waiting → shuffling → card-distribution → card-reveal → card-hidden → waiting-raja → raja-calling → mantri-reveal → guessing → reveal-roles → score-update → leaderboard → finished`) and legal transitions between them. Exports `canTransition()`, `getNextPhase()`, `getLegalTransitions()` |
+| `gameEngine.ts` | **Single owner of all gameplay rules.** Exports action functions (`startGame`, `revealCard`, `hideCard`, `callPolice`, `submitGuess`, `nextRound`, `endGame`) that each self-validate, mutate the room, and return typed events to emit. Provides `advanceToPhase()` for generic phase transitions with automatic role distribution when leaving `shuffling`. Phase scheduling (timed auto-advancements) returned as `ScheduledEvent[]`. Calls `calculateScores()` from `scoreCalculator.ts`, `distributeRoles()` from `roleDistributor.ts`, `buildGameResult()` from `winnerCalculator.ts`, and `calculatePlayerStats()` from `statisticsManager.ts`. Zero dependencies on React, Socket.IO, or Express. |
+| `gameStateMachine.ts` | Defines all 13 game phases in order (`waiting → shuffling → card-distribution → card-reveal → card-hidden → waiting-raja → raja-calling → police-reveal → guessing → reveal-roles → score-update → leaderboard → finished`) and legal transitions between them. Exports `canTransition()`, `getNextPhase()`, `getLegalTransitions()` |
 | `roleDistributor.ts` | Deficit-based fair role rotation algorithm. Distributes roles using deficit scores with last-role penalty to avoid repeats. Random shuffle on first round; fair distribution on subsequent rounds. |
-| `scoreCalculator.ts` | Scoring logic — single source of truth. Correct: Raja +1000, Mantri +500, Sipahi +300, Chor +0. Wrong: Raja +1000, Mantri +0, Sipahi +300, Chor +500. Exports `calculateScores()` and `accumulateScores()` |
+| `scoreCalculator.ts` | Scoring logic — single source of truth. Correct: Raja +1000, Police +500, Sipahi +300, Chor +0. Wrong: Raja +1000, Police +0, Sipahi +300, Chor +500. Exports `calculateScores()` and `accumulateScores()` |
 | `roundManager.ts` | Tracks round number, completed rounds, and current phase. Defines `RoundState` interface. Exports `createRoundState()`, `nextRound()`, `completeRound()` |
 | `winnerCalculator.ts` | Fully implemented — `calculateLeaderboard()` from round history, `determineWinner()`, `buildGameResult()`, `hasTie()` |
 | `statisticsManager.ts` | Fully implemented — `calculatePlayerStats()` (games played, wins, role counts, guess accuracy), `countRoles()` |
@@ -275,7 +275,7 @@ src/game/
 1. **React components must never contain gameplay rules.** Components render UI and call hooks; they do not calculate scores, distribute roles, or decide winners.
 2. **Socket handlers must never contain gameplay logic.** Socket event handlers receive events, validate auth, call the Game Engine, and broadcast results. No phase transitions, no score calculations, no role distribution, no validation logic.
 3. **Zustand stores must never contain game logic.** Stores hold state; they do not implement game rules.
-4. **The Game Engine is the single execution layer for all gameplay.** Every game action (start round, reveal card, hide card, call mantri, submit guess, next round) is a function in `src/game/gameEngine.ts`. The engine validates, mutates state, and returns events to emit. It calls `scoreCalculator.ts`, `roleDistributor.ts`, and `gameStateMachine.ts` internally.
+4. **The Game Engine is the single execution layer for all gameplay.** Every game action (start round, reveal card, hide card, call police, submit guess, next round) is a function in `src/game/gameEngine.ts`. The engine validates, mutates state, and returns events to emit. It calls `scoreCalculator.ts`, `roleDistributor.ts`, and `gameStateMachine.ts` internally.
 5. **Scoring has a single source of truth.** `src/game/scoreCalculator.ts` is the only place where scoring logic lives. No other file contains `calculateScores()` or `accumulateScores()` implementations.
 
 ### Future Implementation
@@ -410,8 +410,8 @@ Client Event → Server Handler (auth) → Game Engine (validate + mutate + retu
 | `start-game`      | `{}`                         | Host clicks Start Game            |
 | `reveal-card`     | `{}`                         | Player reveals card               |
 | `hide-card`       | `{}`                         | Player hides card                 |
-| `call-mantri`     | `{ chosenId }`               | Raja selects Mantri               |
-| `submit-guess`    | `{ chosenId }`               | Mantri submits guess              |
+| `call-police`     | `{ chosenId }`               | Raja selects Police               |
+| `submit-guess`    | `{ chosenId }`               | Police submits guess              |
 | `next-round`      | `{}`                         | Host starts next round            |
 | `end-game`        | `{}`                         | Host ends the game               |
 | `reconnect`       | `{ roomCode, playerId }`     | Player reconnects to active room  |
@@ -430,10 +430,10 @@ Client Event → Server Handler (auth) → Game Engine (validate + mutate + retu
 | `phase-changed`      | `{ phase }`                                  | Game phase transition             |
 | `card-revealed`      | `{ playerId }`                               | Player revealed their card        |
 | `card-hidden`        | `{ playerId }`                               | Player hid their card             |
-| `mantri-revealed`    | `{ mantriId }`                               | Raja's choice broadcast           |
-| `guess-submitted`    | `{ playerId }`                               | Mantri submitted a guess          |
-| `roles-revealed`     | `{ roles }`                                  | All roles revealed simultaneously |
-| `round-result`       | `{ roundNumber, isCorrect, scores, roles, mantriId, chosenId }` | Round scoring result |
+| `police-revealed`   | `{ policeId }`                               | Raja's choice broadcast           |
+| `guess-submitted`   | `{ playerId }`                               | Police submitted a guess          |
+| `roles-revealed`    | `{ roles }`                                  | All roles revealed simultaneously |
+| `round-result`      | `{ roundNumber, isCorrect, scores, roles, policeId, chosenId }` | Round scoring result |
 | `score-updated`      | `{ scores, totals }`                         | Score summary for the round       |
 | `leaderboard-updated`| `{ leaderboard[] }`                          | Sorted leaderboard                |
 | `next-round-started` | `{ room, round }`                            | Next round has begun              |

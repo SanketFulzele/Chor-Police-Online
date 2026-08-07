@@ -1,8 +1,8 @@
 import type { ScoreInput, ScoreOutput } from "./types";
 
 const RAJA_POINTS = 1000;
-const MANTRI_CORRECT_POINTS = 500;
-const MANTRI_WRONG_POINTS = 0;
+const POLICE_CORRECT_POINTS = 500;
+const POLICE_WRONG_POINTS = 0;
 const SIPAHI_POINTS = 300;
 const CHOR_CORRECT_POINTS = 0;
 const CHOR_WRONG_POINTS = 500;
@@ -20,8 +20,8 @@ export function calculateScores(input: ScoreInput): ScoreOutput {
       case "raja":
         scores[playerId] = RAJA_POINTS;
         break;
-      case "mantri":
-        scores[playerId] = isCorrect ? MANTRI_CORRECT_POINTS : MANTRI_WRONG_POINTS;
+      case "police":
+        scores[playerId] = isCorrect ? POLICE_CORRECT_POINTS : POLICE_WRONG_POINTS;
         break;
       case "chor":
         scores[playerId] = isCorrect ? CHOR_CORRECT_POINTS : CHOR_WRONG_POINTS;

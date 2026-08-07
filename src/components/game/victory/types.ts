@@ -19,7 +19,7 @@ export interface StatsShape {
   highestScore: number;
   totalScore: number;
   timesRaja: number;
-  timesMantri: number;
+  timesPolice: number;
   timesChor: number;
   timesSipahi: number;
   correctGuesses: number;
@@ -46,7 +46,7 @@ export function toStats(raw: Record<string, unknown> | undefined): StatsShape | 
     highestScore: num(raw.highestScore),
     totalScore: num(raw.totalScore),
     timesRaja: num(raw.timesRaja),
-    timesMantri: num(raw.timesMantri),
+    timesPolice: num(raw.timesPolice),
     timesChor: num(raw.timesChor),
     timesSipahi: num(raw.timesSipahi),
     correctGuesses: num(raw.correctGuesses),

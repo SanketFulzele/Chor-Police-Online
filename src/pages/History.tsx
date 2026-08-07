@@ -151,8 +151,8 @@ export function History() {
                                   <span style={{ color: ROLE_COLORS[role] }} className="shrink-0 font-semibold">
                                     {ROLE_LABELS[role]}
                                   </span>
-                                  {r.mantriId === pid && (
-                                    <span className="shrink-0 font-medium text-purple-400">· Mantri</span>
+                                  {r.policeId === pid && (
+                                    <span className="shrink-0 font-medium text-purple-400">· Police</span>
                                   )}
                                   {r.chosenId === pid && <span className="shrink-0 font-medium text-rose-400">· Chosen</span>}
                                 </span>

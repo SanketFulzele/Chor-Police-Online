@@ -56,9 +56,9 @@ export interface HideCardPayload {
   playerId: string;
 }
 
-// ---- Raja / Mantri payloads ----
+// ---- Raja / Police payloads ----
 
-export interface CallMantriPayload {
+export interface CallPolicePayload {
   chosenId: string;
 }
 
@@ -66,8 +66,8 @@ export interface RajaRevealedPayload {
   playerId: string;
 }
 
-export interface MantriRevealedPayload {
-  mantriId: string;
+export interface PoliceRevealedPayload {
+  policeId: string;
 }
 
 // ---- Result payloads ----
@@ -97,7 +97,7 @@ export interface RoundResultPayload {
   isCorrect: boolean;
   scores: Record<string, number>;
   roles: Record<string, GameRole>;
-  mantriId: string;
+  policeId: string;
   chosenId: string;
 }
 
@@ -125,7 +125,7 @@ export interface GameOverPayload {
   roundHistory: {
     roundNumber: number;
     roles: Record<string, GameRole>;
-    mantriId: string;
+    policeId: string;
     chosenId: string;
     isCorrect: boolean;
     scores: Record<string, number>;
@@ -171,7 +171,7 @@ export interface SocketPayloadMap {
   [SocketEvents.START_GAME]: undefined;
   [SocketEvents.REVEAL_CARD]: undefined;
   [SocketEvents.HIDE_CARD]: undefined;
-  [SocketEvents.CALL_MANTRI]: CallMantriPayload;
+  [SocketEvents.CALL_POLICE]: CallPolicePayload;
   [SocketEvents.SUBMIT_GUESS]: SubmitGuessPayload;
   [SocketEvents.NEXT_ROUND]: undefined;
   [SocketEvents.END_GAME]: undefined;
@@ -188,7 +188,7 @@ export interface SocketPayloadMap {
   [SocketEvents.CARD_REVEALED]: RevealCardPayload;
   [SocketEvents.CARD_HIDDEN]: HideCardPayload;
   [SocketEvents.RAJA_REVEALED]: RajaRevealedPayload;
-  [SocketEvents.MANTRI_REVEALED]: MantriRevealedPayload;
+  [SocketEvents.POLICE_REVEALED]: PoliceRevealedPayload;
   [SocketEvents.SHOW_RESULT]: ShowResultPayload;
   [SocketEvents.GUESS_SUBMITTED]: GuessSubmittedPayload;
   [SocketEvents.ROLES_REVEALED]: RolesRevealedPayload;
