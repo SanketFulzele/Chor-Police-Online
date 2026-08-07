@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { RoyalPanel } from "../ui/RoyalPanel";
 import { useChat } from "../../hooks/useChat";
@@ -72,7 +72,7 @@ function LockIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
-function MessageRow({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) {
+const MessageRow = memo(function MessageRow({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) {
   if (message.isSystem) {
     return (
       <motion.div
@@ -119,7 +119,7 @@ function MessageRow({ message, isOwn }: { message: ChatMessage; isOwn: boolean }
       </div>
     </motion.div>
   );
-}
+});
 
 function TypingIndicator({ names }: { names: string[] }) {
   if (names.length === 0) return null;
@@ -171,7 +171,7 @@ export function GroupChat({ className = "" }: GroupChatProps) {
 
   const gameFinished = room?.phase === "finished";
   const connectedCount = room?.players.filter((p) => p.isConnected).length ?? 0;
-  const typingList = Object.values(typingUsers);
+  const typingList = Object.values(typingUsers).filter((u) => u.playerId !== playerId);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -284,6 +284,8 @@ export function GroupChat({ className = "" }: GroupChatProps) {
               ref={scrollRef}
               onScroll={handleScroll}
               className="flex h-[clamp(220px,38dvh,360px)] flex-col gap-3 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4"
+              role="log"
+              aria-live="polite"
             >
               {messages.length === 0 && !gameFinished && (
                 <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
@@ -346,7 +348,7 @@ export function GroupChat({ className = "" }: GroupChatProps) {
                   value={draft}
                   onChange={handleChange}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
+                    if (event.key === "Enter" && !event.shiftKey && !gameFinished && canSend) {
                       event.preventDefault();
                       handleSubmit();
                     }

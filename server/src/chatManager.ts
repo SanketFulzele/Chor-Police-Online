@@ -64,8 +64,11 @@ export function clearChat(roomCode: string): void {
 
 export function deleteChat(roomCode: string): void {
   chats.delete(roomCode);
-  lastMessageAt.delete(roomCode);
-  lastTypingAt.delete(roomCode);
+}
+
+export function cleanupChatSocket(socketId: string): void {
+  lastMessageAt.delete(socketId);
+  lastTypingAt.delete(socketId);
 }
 
 export function canSendMessage(socketId: string): boolean {

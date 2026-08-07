@@ -14,7 +14,8 @@ export function useChat() {
     if (!socket) return;
 
     const handleReceive = ({ message }: { message: ChatMessage }) => {
-      useChatStore.getState().receiveMessage(message);
+      const ownId = useRoomStore.getState().playerId;
+      useChatStore.getState().receiveMessage(message, message.playerId === ownId);
     };
     const handleHistory = ({ messages }: { messages: ChatMessage[] }) => {
       useChatStore.getState().setHistory(messages);
@@ -55,14 +56,11 @@ export function useChat() {
   }, []);
 
   useEffect(() => {
-    if (room?.phase === "finished") {
-      useChatStore.getState().clearMessages();
-    }
-  }, [room?.phase]);
-
-  useEffect(() => {
-    if (!room) {
-      useChatStore.getState().reset();
+    const chat = useChatStore.getState();
+    const roomCode = room?.code ?? null;
+    if (chat.roomCode !== roomCode) {
+      chat.reset();
+      useChatStore.getState().setRoomCode(roomCode);
     }
   }, [room]);
 

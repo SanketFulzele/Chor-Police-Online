@@ -166,8 +166,7 @@ export function registerGameHandlers(io: Server) {
       const result = endGame(room, player);
       emitResult(room, result, io, socket);
       if (result.ok) {
-        clearChat(room.code);
-        io.to(room.code).emit(SocketEvents.CHAT_CLEAR);
+        pushSystemMessage(io, room.code, `🏆 ${room.winnerName ?? "Winner"} won the game!`);
       }
     });
   });

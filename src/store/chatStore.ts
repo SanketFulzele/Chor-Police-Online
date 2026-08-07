@@ -8,38 +8,41 @@ export interface TypingUser {
 }
 
 interface ChatState {
+  roomCode: string | null;
   messages: ChatMessage[];
   typingUsers: Record<string, TypingUser>;
   unread: number;
   isCollapsed: boolean;
 
-  receiveMessage: (message: ChatMessage) => void;
+  receiveMessage: (message: ChatMessage, isOwn: boolean) => void;
   setHistory: (messages: ChatMessage[]) => void;
   clearMessages: () => void;
   setTyping: (playerId: string, playerName: string, isTyping: boolean) => void;
   pruneTyping: (now: number) => void;
   toggleCollapsed: () => void;
+  setRoomCode: (code: string | null) => void;
   reset: () => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
+  roomCode: null,
   messages: [],
   typingUsers: {},
   unread: 0,
   isCollapsed: false,
 
-  receiveMessage: (message) =>
+  receiveMessage: (message, isOwn) =>
     set((state) => {
       if (state.messages.some((m) => m.id === message.id)) return state;
       return {
         messages: [...state.messages, message],
-        unread: state.isCollapsed ? state.unread + 1 : state.unread,
+        unread: state.isCollapsed && !isOwn ? state.unread + 1 : state.unread,
       };
     }),
 
-  setHistory: (messages) => set({ messages }),
+  setHistory: (messages) => set({ messages, unread: 0, typingUsers: {} }),
 
-  clearMessages: () => set({ messages: [] }),
+  clearMessages: () => set({ messages: [], unread: 0, typingUsers: {} }),
 
   setTyping: (playerId, playerName, isTyping) =>
     set((state) => {
@@ -74,5 +77,8 @@ export const useChatStore = create<ChatState>((set) => ({
       };
     }),
 
-  reset: () => set({ messages: [], typingUsers: {}, unread: 0, isCollapsed: false }),
+  setRoomCode: (code) => set({ roomCode: code }),
+
+  reset: () =>
+    set({ roomCode: null, messages: [], typingUsers: {}, unread: 0, isCollapsed: false }),
 }));
