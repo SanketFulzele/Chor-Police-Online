@@ -1,6 +1,6 @@
-import type { GameRole, GamePhase, Player, PlayerStatistics, Room } from "../../shared/socket/types";
+import type { GameRole, GamePhase, Player, PlayerStatistics, Room, ChatMessage } from "../../shared/socket/types";
 
-export type { GameRole, GamePhase, Player, PlayerStatistics, Room };
+export type { GameRole, GamePhase, Player, PlayerStatistics, Room, ChatMessage };
 
 export interface RoundRecord {
   round: number;

@@ -2,6 +2,7 @@ import type { Server } from "socket.io";
 import type { Room } from "./types";
 import { getRoom, getPlayerBySocketId } from "./roomManager.js";
 import { SocketEvents } from "../shared/socket/events.js";
+import { clearChat, pushSystemMessage } from "./chatManager.js";
 import type {
   EngineResult,
   ScheduledEvent,
@@ -76,8 +77,14 @@ export function registerGameHandlers(io: Server) {
       if (!ctx) return;
 
       const { room, player } = ctx;
+      const wasFinished = room.phase === "finished";
       const result = startGame(room, player);
       emitResult(room, result, io, socket);
+      if (result.ok) {
+        clearChat(room.code);
+        io.to(room.code).emit(SocketEvents.CHAT_CLEAR);
+        pushSystemMessage(io, room.code, wasFinished ? "🔄 New Game Started." : "🎮 Game Started.");
+      }
     });
 
     // ========== REVEAL CARD ==========
@@ -111,6 +118,9 @@ export function registerGameHandlers(io: Server) {
       const { room, player } = ctx;
       const result = callPolice(room, player);
       emitResult(room, result, io, socket);
+      if (result.ok) {
+        pushSystemMessage(io, room.code, "👮 Police is choosing the Chor...");
+      }
     });
 
     // ========== SUBMIT GUESS ==========
@@ -122,6 +132,14 @@ export function registerGameHandlers(io: Server) {
       const { room, player } = ctx;
       const result = submitGuess(room, player, chosenId);
       emitResult(room, result, io, socket);
+      if (result.ok) {
+        const last = room.roundHistory[room.roundHistory.length - 1];
+        pushSystemMessage(
+          io,
+          room.code,
+          last?.isCorrect ? "🏆 Police found the Chor!" : "❌ Police got it wrong! The Chor escaped."
+        );
+      }
     });
 
     // ========== NEXT ROUND ==========
@@ -133,6 +151,9 @@ export function registerGameHandlers(io: Server) {
       const { room, player } = ctx;
       const result = nextRound(room, player);
       emitResult(room, result, io, socket);
+      if (result.ok) {
+        pushSystemMessage(io, room.code, `🔁 Round ${room.round} Started.`);
+      }
     });
 
     // ========== END GAME ==========
@@ -144,6 +165,10 @@ export function registerGameHandlers(io: Server) {
       const { room, player } = ctx;
       const result = endGame(room, player);
       emitResult(room, result, io, socket);
+      if (result.ok) {
+        clearChat(room.code);
+        io.to(room.code).emit(SocketEvents.CHAT_CLEAR);
+      }
     });
   });
 }

@@ -24,6 +24,10 @@ export type {
   ScoreUpdatedPayload,
   LeaderboardUpdatedPayload,
   NextRoundStartedPayload,
+  ChatSendPayload,
+  ChatReceivePayload,
+  ChatHistoryPayload,
+  ChatTypingPayload,
   ErrorMessagePayload,
   SocketPayloadMap,
 } from "./payloads";
@@ -34,4 +38,5 @@ export type {
   Player,
   PlayerStatistics,
   Room,
+  ChatMessage,
 } from "./types";

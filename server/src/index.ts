@@ -14,6 +14,8 @@ import {
   updatePlayerSocket,
 } from "./roomManager.js";
 import { registerGameHandlers } from "./gameHandler.js";
+import { registerChatHandlers } from "./chatHandler.js";
+import { deleteChat, getChatHistory, pushSystemMessage } from "./chatManager.js";
 import { SocketEvents } from "../shared/socket/events.js";
 
 const app = express();
@@ -116,6 +118,7 @@ io.on("connection", (socket) => {
       socket.join(result.room.code);
       console.log(`[join] socket=${socket.id} joined room=${result.room.code} players=${result.room.players.length}`);
       socket.emit(SocketEvents.ROOM_JOINED, { room: result.room, playerId });
+      pushSystemMessage(io, result.room.code, `👑 ${playerName.trim()} joined the room.`);
       broadcastRoom(result.room.code);
     }
   );
@@ -130,9 +133,11 @@ io.on("connection", (socket) => {
     socket.leave(room.code);
 
     if (updatedRoom) {
+      pushSystemMessage(io, room.code, `👋 ${player.name} left the room.`);
       broadcastRoom(room.code);
     } else {
       io.to(room.code).emit(SocketEvents.ROOM_DESTROYED);
+      deleteChat(room.code);
     }
   });
 
@@ -162,6 +167,7 @@ io.on("connection", (socket) => {
     updatePlayerSocket(room.code, player.id, socket.id);
     socket.join(room.code);
     socket.emit(SocketEvents.RECONNECT_STATE, { room, playerId, myRole: player.currentRole });
+    socket.emit(SocketEvents.CHAT_HISTORY, { messages: getChatHistory(room.code) });
     io.to(room.code).emit(SocketEvents.PLAYER_RECONNECTED, { playerId: player.id });
     io.to(room.code).emit(SocketEvents.ROOM_UPDATED, { room });
   });
@@ -228,6 +234,7 @@ io.on("connection", (socket) => {
 });
 
 registerGameHandlers(io);
+registerChatHandlers(io);
 
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {

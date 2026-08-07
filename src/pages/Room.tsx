@@ -8,6 +8,7 @@ import { CrownIcon } from "../components/ui/CrownIcon";
 import { RoyalPanel } from "../components/ui/RoyalPanel";
 import { PremiumBackground } from "../components/layout/PremiumBackground";
 import { useRoom } from "../hooks/useRoom";
+import { GroupChat } from "../components/game/GroupChat";
 import { SocketEvents } from "../../shared/socket/events";
 import { loadSession, clearSession } from "../utils/session";
 import { MAX_PLAYERS, MIN_PLAYERS } from "../constants/game";
@@ -383,6 +384,9 @@ export function Room() {
             </Button>
           )}
         </div>
+
+        {/* ── Group Chat ────────────────────────────────────────────── */}
+        <GroupChat className="w-full" />
       </motion.div>
     </div>
   );

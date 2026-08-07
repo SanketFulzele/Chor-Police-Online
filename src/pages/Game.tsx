@@ -13,6 +13,7 @@ import { PlayerList } from "../components/game/PlayerList";
 import { ShuffleAnimation } from "../components/game/ShuffleAnimation";
 import { IdentifyChorModal } from "../components/game/IdentifyChorModal";
 import { RoundResultPopup } from "../components/game/RoundResultPopup";
+import { GroupChat } from "../components/game/GroupChat";
 import { VictoryScreen } from "../components/game/victory/VictoryScreen";
 import { RankingList } from "../components/game/victory/RankingList";
 import { ScoreTable } from "../components/game/victory/ScoreTable";
@@ -180,7 +181,7 @@ export function GamePage() {
 
         {/* Gameplay: horizontal two-column layout (consistent across all gameplay phases) */}
         {isGameplayPhase && (
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-center gap-5 lg:gap-6 text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-start gap-5 lg:gap-6 text-left">
             {/* Left: player list */}
             <RoyalPanel className="flex flex-col p-5 sm:p-6">
               <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
@@ -197,49 +198,53 @@ export function GamePage() {
               <PlayerList players={room.players} playerId={playerId} />
             </RoyalPanel>
 
-            {/* Right: role card panel */}
-            <RoyalPanel decorativeCorners className="relative flex flex-col items-center justify-center overflow-hidden px-5 py-10 sm:px-8">
-              <GameCard
-                size="sm"
-                role={myRole ?? undefined}
-                revealed={hasRevealed && !hasHidden}
-                onReveal={revealCard}
-                onHide={hideCard}
-              />
+            {/* Right: role card + group chat */}
+            <div className="flex min-w-0 flex-col gap-5">
+              <RoyalPanel decorativeCorners className="relative flex flex-col items-center justify-center overflow-hidden px-5 py-10 sm:px-8">
+                <GameCard
+                  size="sm"
+                  role={myRole ?? undefined}
+                  revealed={hasRevealed && !hasHidden}
+                  onReveal={revealCard}
+                  onHide={hideCard}
+                />
 
-              {myRole === "raja" && hasRevealed && !hasHidden && !rajaRevealed && (
-                <p className="mt-4 text-sm text-yellow-400">
-                  Raja revealed! Other players can now see who you are.
-                </p>
-              )}
+                {myRole === "raja" && hasRevealed && !hasHidden && !rajaRevealed && (
+                  <p className="mt-4 text-sm text-yellow-400">
+                    Raja revealed! Other players can now see who you are.
+                  </p>
+                )}
 
-              {myRole === "raja" && rajaRevealed && !policeRevealed && (
-                <Button
-                  className="mt-4 gold-gradient text-black font-bold"
-                  onClick={askForPolice}
-                >
-                  Call the Police
-                </Button>
-              )}
+                {myRole === "raja" && rajaRevealed && !policeRevealed && (
+                  <Button
+                    className="mt-4 gold-gradient text-black font-bold"
+                    onClick={askForPolice}
+                  >
+                    Call the Police
+                  </Button>
+                )}
 
-              {myRole === "police" && phase === "guessing" && (
-                <Button
-                  className="mt-4 w-full gold-gradient text-black font-bold"
-                  onClick={() => setModalOpen(true)}
-                >
-                  Identify the Chor
-                </Button>
-              )}
+                {myRole === "police" && phase === "guessing" && (
+                  <Button
+                    className="mt-4 w-full gold-gradient text-black font-bold"
+                    onClick={() => setModalOpen(true)}
+                  >
+                    Identify the Chor
+                  </Button>
+                )}
 
-              <div className="mt-6 flex w-full items-start gap-3 rounded-2xl border border-gold/20 bg-gold/[0.04] px-4 py-3 text-left">
-                <CrownIcon className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
-                <p className="text-xs leading-relaxed text-text-secondary">
-                  Keep your role a secret! Only the{" "}
-                  <span className="font-semibold text-gold">Raja</span> is revealed
-                  publicly. Click the card or use the buttons to peek and hide.
-                </p>
-              </div>
-            </RoyalPanel>
+                <div className="mt-6 flex w-full items-start gap-3 rounded-2xl border border-gold/20 bg-gold/[0.04] px-4 py-3 text-left">
+                  <CrownIcon className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+                  <p className="text-xs leading-relaxed text-text-secondary">
+                    Keep your role a secret! Only the{" "}
+                    <span className="font-semibold text-gold">Raja</span> is revealed
+                    publicly. Click the card or use the buttons to peek and hide.
+                  </p>
+                </div>
+              </RoyalPanel>
+
+              <GroupChat className="w-full" />
+            </div>
           </div>
         )}
 
@@ -363,6 +368,9 @@ export function GamePage() {
             onGameHistory={() => navigate("/history")}
           />
         )}
+
+        {/* Group chat: full width below the phase content */}
+        {!isGameplayPhase && <GroupChat className="w-full" />}
 
         {phase === "waiting" && (
           <Button variant="ghost" onClick={() => navigate("/")}>

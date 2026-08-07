@@ -55,6 +55,13 @@ export const SocketEvents = {
   // Disconnect
   PLAYER_DISCONNECTED: "player-disconnected",
 
+  // Chat
+  CHAT_SEND: "chat:send",
+  CHAT_RECEIVE: "chat:receive",
+  CHAT_HISTORY: "chat:history",
+  CHAT_CLEAR: "chat:clear",
+  CHAT_TYPING: "chat:typing",
+
   // Error
   ERROR_MESSAGE: "error-message",
 } as const;

@@ -72,3 +72,13 @@ export interface Room {
   finishedAt?: number;
   roundHistory: RoundHistoryEntry[];
 }
+
+export interface ChatMessage {
+  id: string;
+  playerId: string;
+  playerName: string;
+  avatarColor: string;
+  text: string;
+  timestamp: number;
+  isSystem?: boolean;
+}

@@ -1,5 +1,5 @@
 import { SocketEvents } from "./events";
-import type { GameRole, PlayerStatistics, Room } from "./types";
+import type { ChatMessage, GameRole, PlayerStatistics, Room } from "./types";
 
 // ---- Room payloads ----
 
@@ -153,6 +153,26 @@ export interface PlayerDisconnectedPayload {
   playerId: string;
 }
 
+// ---- Chat payloads ----
+
+export interface ChatSendPayload {
+  text: string;
+}
+
+export interface ChatReceivePayload {
+  message: ChatMessage;
+}
+
+export interface ChatHistoryPayload {
+  messages: ChatMessage[];
+}
+
+export interface ChatTypingPayload {
+  playerId: string;
+  playerName: string;
+  isTyping: boolean;
+}
+
 // ---- Error payload ----
 
 export interface ErrorMessagePayload {
@@ -176,6 +196,8 @@ export interface SocketPayloadMap {
   [SocketEvents.NEXT_ROUND]: undefined;
   [SocketEvents.END_GAME]: undefined;
   [SocketEvents.RECONNECT]: ReconnectPayload;
+  [SocketEvents.CHAT_SEND]: ChatSendPayload;
+  [SocketEvents.CHAT_TYPING]: ChatTypingPayload;
 
   [SocketEvents.ROOM_CREATED]: CreateRoomAckPayload;
   [SocketEvents.ROOM_JOINED]: JoinRoomAckPayload;
@@ -200,5 +222,8 @@ export interface SocketPayloadMap {
   [SocketEvents.RECONNECT_STATE]: ReconnectStatePayload;
   [SocketEvents.PLAYER_RECONNECTED]: PlayerReconnectedPayload;
   [SocketEvents.PLAYER_DISCONNECTED]: PlayerDisconnectedPayload;
+  [SocketEvents.CHAT_RECEIVE]: ChatReceivePayload;
+  [SocketEvents.CHAT_HISTORY]: ChatHistoryPayload;
+  [SocketEvents.CHAT_CLEAR]: undefined;
   [SocketEvents.ERROR_MESSAGE]: ErrorMessagePayload;
 }
