@@ -369,8 +369,8 @@ export function GamePage() {
           />
         )}
 
-        {/* Group chat: full width below the phase content */}
-        {!isGameplayPhase && <GroupChat className="w-full" />}
+        {/* Group chat: full width below the phase content (hidden after the game ends) */}
+        {!isGameplayPhase && phase !== "finished" && <GroupChat className="w-full" />}
 
         {phase === "waiting" && (
           <Button variant="ghost" onClick={() => navigate("/")}>
