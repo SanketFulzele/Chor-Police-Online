@@ -1,4 +1,12 @@
-export type GameRole = "raja" | "police" | "chor" | "sipahi";
+export type GameRole =
+  | "raja"
+  | "police"
+  | "sipahi"
+  | "chor"
+  | "daku"
+  | "joker"
+  | "aam-aadmi"
+  | "jasoos";
 
 export type GamePhase =
   | "waiting"
@@ -17,10 +25,7 @@ export interface PlayerStatistics {
   wins: number;
   highestScore: number;
   totalScore: number;
-  timesRaja: number;
-  timesPolice: number;
-  timesChor: number;
-  timesSipahi: number;
+  timesRole: Record<GameRole, number>;
   correctGuesses: number;
   wrongGuesses: number;
   averageScore: number;

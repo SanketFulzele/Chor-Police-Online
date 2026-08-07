@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./Button";
 import { RoleIcon } from "../game/RoleIcon";
-import { ROLE_LABELS, ROLE_COLORS } from "../../constants/game";
+import { ROLE_LABELS, ROLE_COLORS, ALL_ROLES } from "../../constants/game";
 import type { GameRole } from "../../types";
 
 interface HowToPlayModalProps {
@@ -64,7 +64,7 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
                 <ul className="space-y-1.5 text-sm text-text-secondary">
                   <li className="flex items-start gap-2">
                     <span className="text-emerald shrink-0 mt-0.5">•</span>
-                    <span>Exactly <strong>4 players</strong> are required.</span>
+                    <span>Between <strong>4 and 8 players</strong> are required.</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-emerald shrink-0 mt-0.5">•</span>
@@ -84,7 +84,7 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-emerald shrink-0 mt-0.5">•</span>
-                    <span>Wait until all four players have joined before starting.</span>
+                    <span>Wait until at least four players have joined before starting.</span>
                   </li>
                 </ul>
               </section>
@@ -94,9 +94,11 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
                 <h3 className="font-semibold text-sm flex items-center gap-2 mb-2.5">
                   <span className="text-base">🎭</span> Game Roles
                 </h3>
-                <p className="text-sm text-text-muted mb-3">There are four roles — every player receives one at random.</p>
+                <p className="text-sm text-text-muted mb-3">
+                  Every player receives one unique role at random — more players unlock more roles.
+                </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {(["raja", "police", "sipahi", "chor"] as GameRole[]).map((role) => (
+                  {(ALL_ROLES as GameRole[]).map((role) => (
                     <div key={role} className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-center">
                       <RoleIcon role={role} className="w-8 h-8 mx-auto block" />
                       <span className="text-xs font-semibold mt-1 block" style={{ color: ROLE_COLORS[role] }}>
@@ -118,13 +120,13 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
                 <ol className="space-y-2.5 text-sm text-text-secondary">
                   {[
                     "The Host creates a room.",
-                    "The other three players join using the Room Code.",
+                    "The other players join using the Room Code.",
                     "The Host starts the game.",
                     "Each player may reveal or hide their own role card at any time.",
                     "When the Raja reveals their card, everyone will know who the Raja is.",
                     'The Raja clicks "Call the Police".',
                     "The Police is revealed to everyone.",
-                    "Only the Police receives a popup showing the remaining two hidden players. The Police must select the player they believe is the Chor.",
+                    "Only the Police receives a popup showing the remaining hidden players. The Police must select the player they believe is the Chor.",
                     "The result is revealed to everyone — ✅ Correct or ❌ Wrong.",
                     "Scores are awarded. Players may continue to the next round.",
                   ].map((step, i) => (

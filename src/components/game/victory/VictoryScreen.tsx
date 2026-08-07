@@ -153,7 +153,7 @@ function buildAchievements(playerId: string, stats: StatsShape, rows: RoundRow[]
       accent: "border-royal/40 bg-royal/15 text-royal-light",
     });
   }
-  if (totalRounds > 0 && stats.timesSipahi === totalRounds) {
+  if (totalRounds > 0 && stats.timesRole.sipahi === totalRounds) {
     badges.push({
       id: "loyal-sipahi",
       title: "Loyal Sipahi",
@@ -162,7 +162,7 @@ function buildAchievements(playerId: string, stats: StatsShape, rows: RoundRow[]
       accent: "border-amber/40 bg-amber/15 text-amber",
     });
   }
-  if (stats.timesRaja > 0 && stats.timesRaja === ctx.maxRaja) {
+  if (stats.timesRole.raja > 0 && stats.timesRole.raja === ctx.maxRaja) {
     badges.push({
       id: "royal-leader",
       title: "Royal Leader",
@@ -227,7 +227,7 @@ export function VictoryScreen({
   const statsMap = new Map<string, StatsShape | null>();
   for (const p of room.players) statsMap.set(p.id, toStats(playerStatistics?.[p.id]));
 
-  const maxRaja = Math.max(0, ...room.players.map((p) => statsMap.get(p.id)?.timesRaja ?? 0));
+  const maxRaja = Math.max(0, ...room.players.map((p) => statsMap.get(p.id)?.timesRole.raja ?? 0));
   const maxCorrect = Math.max(0, ...room.players.map((p) => statsMap.get(p.id)?.correctGuesses ?? 0));
   const maxHighest = Math.max(0, ...room.players.map((p) => statsMap.get(p.id)?.highestScore ?? 0));
 

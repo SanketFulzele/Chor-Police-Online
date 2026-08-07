@@ -3,16 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { HowToPlayModal } from "../components/ui/HowToPlayModal";
 import { PremiumBackground } from "../components/layout/PremiumBackground";
-import { CARD_IMAGES, ROLE_LABELS, ROLE_COLORS } from "../constants/game";
+import { CARD_IMAGES, ROLE_LABELS, ROLE_COLORS, ROLE_POINTS, ALL_ROLES } from "../constants/game";
 import type { GameRole } from "../types";
 
-const ROLES: GameRole[] = ["raja", "police", "sipahi", "chor"];
+const ROLES: GameRole[] = ALL_ROLES;
 
 const ROLE_GLOWS: Record<GameRole, string> = {
   raja: "rgba(255, 215, 0, 0.28)",
   police: "rgba(124, 58, 237, 0.34)",
   sipahi: "rgba(245, 158, 11, 0.28)",
   chor: "rgba(239, 68, 68, 0.28)",
+  daku: "rgba(236, 72, 153, 0.28)",
+  joker: "rgba(34, 211, 238, 0.28)",
+  "aam-aadmi": "rgba(148, 163, 184, 0.28)",
+  jasoos: "rgba(16, 185, 129, 0.28)",
 };
 
 const containerVariants = {
@@ -102,14 +106,14 @@ export function Home() {
           </div>
 
           <p className="text-text-muted text-xs tracking-wide mt-4">
-            Real-time matches &middot; Up to 4 players &middot; No signup needed
+            Real-time matches &middot; 4 to 8 players &middot; No signup needed
           </p>
         </motion.section>
 
         {/* ── Roles Showcase ──────────────────────────────────────────── */}
         <motion.section variants={itemVariants} className="w-full mt-16">
           <div className="mb-8">
-            <p className="text-[11px] tracking-[0.35em] uppercase text-gold/70 mb-2">The Four Roles</p>
+            <p className="text-[11px] tracking-[0.35em] uppercase text-gold/70 mb-2">The Eight Roles</p>
             <h2 className="text-2xl md:text-3xl font-bold gold-gradient">Choose Your Destiny</h2>
           </div>
 
@@ -141,6 +145,9 @@ export function Home() {
                     style={{ color: ROLE_COLORS[role] }}
                   >
                     {ROLE_LABELS[role]}
+                  </p>
+                  <p className="text-center font-mono text-xs font-bold text-gold/80 mt-1">
+                    {ROLE_POINTS[role]} pts
                   </p>
                 </div>
               </motion.div>

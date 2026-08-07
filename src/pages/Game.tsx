@@ -21,6 +21,7 @@ import { IconHistory, IconTrophy } from "../components/game/victory/icons";
 import { rankPlayers, toRows } from "../components/game/victory/types";
 import { usePersistence } from "../hooks/usePersistence";
 import { loadSession, clearSession } from "../utils/session";
+import { MAX_PLAYERS, MIN_PLAYERS } from "../constants/game";
 
 export function GamePage() {
   const navigate = useNavigate();
@@ -186,7 +187,7 @@ export function GamePage() {
                 <h3 className="text-base font-bold tracking-wide text-text-primary">
                   Players{" "}
                   <span className="text-sm font-medium text-text-muted">
-                    ({room.players.length}/4)
+                    ({room.players.length}/{MAX_PLAYERS})
                   </span>
                 </h3>
                 <span className="text-xs font-semibold uppercase tracking-widest text-gold/70">
@@ -252,7 +253,7 @@ export function GamePage() {
                 <span className="h-px w-14 bg-gradient-to-l from-transparent to-gold/50" />
               </div>
               <h3 className="text-center text-2xl font-black tracking-[0.2em] gold-gradient">READY TO PLAY</h3>
-              <p className="text-center text-sm text-text-muted">{room.players.length}/4 players joined</p>
+              <p className="text-center text-sm text-text-muted">{room.players.length}/{MAX_PLAYERS} players joined</p>
               <div className="space-y-2">
                 {room.players.map((p) => (
                   <div
@@ -274,7 +275,7 @@ export function GamePage() {
                   </div>
                 ))}
               </div>
-              {isHost && room.players.length === 4 && room.players.every((p) => p.isReady) && (
+              {isHost && room.players.length >= MIN_PLAYERS && room.players.every((p) => p.isReady) && (
                 <Button variant="gold-gradient" className="w-full" onClick={startGame}>
                   Start Game
                 </Button>

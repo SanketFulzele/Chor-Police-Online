@@ -10,6 +10,7 @@ import { PremiumBackground } from "../components/layout/PremiumBackground";
 import { useRoom } from "../hooks/useRoom";
 import { SocketEvents } from "../../shared/socket/events";
 import { loadSession, clearSession } from "../utils/session";
+import { MAX_PLAYERS, MIN_PLAYERS } from "../constants/game";
 
 interface CopyButtonProps {
   copied: boolean;
@@ -109,9 +110,9 @@ export function Room() {
   if (!room) return null;
 
   const allReady =
-    room.players.length === 4 &&
+    room.players.length >= MIN_PLAYERS &&
     room.players.every((p) => p.isReady || p.isHost);
-  const canStart = room.players.length === 4 && allReady && isHost;
+  const canStart = allReady && isHost;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(room.code).then(() => {
@@ -125,11 +126,12 @@ export function Room() {
     startGame();
   };
 
-  const missingPlayers = 4 - room.players.length;
-  const allHereAndReady = room.players.length === 4 && allReady;
+  const missingPlayers = MAX_PLAYERS - room.players.length;
+  const hasMinimum = room.players.length >= MIN_PLAYERS;
+  const allHereAndReady = hasMinimum && allReady;
   const bannerText = allHereAndReady
     ? "All players ready!"
-    : missingPlayers > 0
+    : missingPlayers > 0 && !hasMinimum
     ? `Waiting for ${missingPlayers} more player${missingPlayers > 1 ? "s" : ""}`
     : "Waiting for all players to be ready";
 
@@ -181,7 +183,7 @@ export function Room() {
             <h3 className="text-base font-bold tracking-wide text-text-primary">
               Players{" "}
               <span className="text-text-muted text-sm font-medium">
-                ({room.players.length}/4)
+                ({room.players.length}/{MAX_PLAYERS})
               </span>
             </h3>
             {status === "connected" && (
@@ -283,7 +285,7 @@ export function Room() {
               ))}
             </AnimatePresence>
 
-            {Array.from({ length: 4 - room.players.length }).map((_, i) => (
+            {Array.from({ length: MAX_PLAYERS - room.players.length }).map((_, i) => (
               <motion.div
                 key={`empty-${i}`}
                 initial={{ opacity: 0 }}

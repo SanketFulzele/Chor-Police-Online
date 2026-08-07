@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ROLE_COLORS, ROLE_LABELS } from "../../../constants/game";
+import { ALL_ROLES } from "../../../game/roles";
 import type { GameRole } from "../../../types";
 import { RoleIcon } from "../RoleIcon";
 import { useCountUp } from "./CountUp";
@@ -14,12 +15,7 @@ interface PlayerStatCardProps {
   stats: StatsShape;
 }
 
-const ROLE_KEYS: { key: keyof StatsShape; role: GameRole }[] = [
-  { key: "timesRaja", role: "raja" },
-  { key: "timesPolice", role: "police" },
-  { key: "timesChor", role: "chor" },
-  { key: "timesSipahi", role: "sipahi" },
-];
+const ROLE_KEYS: GameRole[] = ALL_ROLES;
 
 function rankSuffix(i: number): string {
   if (i === 0) return "1st";
@@ -58,12 +54,12 @@ export function PlayerStatCard({ name, avatarColor, isYou, rank, stats }: Player
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2">
-        {ROLE_KEYS.map(({ key, role }) => (
-          <div key={key} className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+        {ROLE_KEYS.map((role) => (
+          <div key={role} className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
             <RoleIcon role={role} className="h-5 w-5" />
             <span className="flex-1 text-[11px] text-text-secondary">{ROLE_LABELS[role]}</span>
             <span className="text-xs font-bold font-mono" style={{ color: ROLE_COLORS[role] }}>
-              {String(stats[key] ?? 0)}×
+              {String(stats.timesRole[role] ?? 0)}×
             </span>
           </div>
         ))}

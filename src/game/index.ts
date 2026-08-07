@@ -1,5 +1,6 @@
 export * from "./types";
 export * from "./gameStateMachine";
+export * as roles from "./roles";
 export * as gameEngine from "./gameEngine";
 export * as roleDistributor from "./roleDistributor";
 export * as scoreCalculator from "./scoreCalculator";

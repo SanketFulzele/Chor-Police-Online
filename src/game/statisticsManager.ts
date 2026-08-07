@@ -1,15 +1,13 @@
 import type { GameRole } from "../../shared/socket/types";
 import type { RoundHistoryEntry } from "../../shared/socket/types";
+import { emptyRoleCounts } from "./roles";
 
 export interface PlayerStats {
   gamesPlayed: number;
   wins: number;
   highestScore: number;
   totalScore: number;
-  timesRaja: number;
-  timesPolice: number;
-  timesChor: number;
-  timesSipahi: number;
+  timesRole: Record<GameRole, number>;
   correctGuesses: number;
   wrongGuesses: number;
 }
@@ -21,10 +19,7 @@ export function calculatePlayerStats(
 ): PlayerStats {
   let totalScore = 0;
   let highestScore = 0;
-  let timesRaja = 0;
-  let timesPolice = 0;
-  let timesChor = 0;
-  let timesSipahi = 0;
+  const timesRole = emptyRoleCounts();
   let correctGuesses = 0;
   let wrongGuesses = 0;
 
@@ -34,10 +29,7 @@ export function calculatePlayerStats(
     if (score > highestScore) highestScore = score;
 
     const role = round.roles[playerId];
-    if (role === "raja") timesRaja++;
-    else if (role === "police") timesPolice++;
-    else if (role === "chor") timesChor++;
-    else if (role === "sipahi") timesSipahi++;
+    if (role) timesRole[role]++;
 
     if (playerId === round.policeId || role === "police") {
       if (round.isCorrect) correctGuesses++;
@@ -52,10 +44,7 @@ export function calculatePlayerStats(
     wins,
     highestScore,
     totalScore,
-    timesRaja,
-    timesPolice,
-    timesChor,
-    timesSipahi,
+    timesRole,
     correctGuesses,
     wrongGuesses,
   };
@@ -65,7 +54,7 @@ export function countRoles(
   playerId: string,
   rounds: RoundHistoryEntry[]
 ): Record<GameRole, number> {
-  const counts: Record<GameRole, number> = { raja: 0, police: 0, chor: 0, sipahi: 0 };
+  const counts = emptyRoleCounts();
   for (const round of rounds) {
     const role = round.roles[playerId];
     if (role) counts[role]++;

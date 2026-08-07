@@ -1,35 +1,32 @@
 import type { ScoreInput, ScoreOutput } from "./types";
+import type { GameRole } from "../types";
 
-const RAJA_POINTS = 1000;
-const POLICE_CORRECT_POINTS = 500;
+const ROLE_POINTS: Record<GameRole, number> = {
+  raja: 1000,
+  police: 800,
+  sipahi: 600,
+  chor: 0,
+  daku: 200,
+  joker: 300,
+  "aam-aadmi": 100,
+  jasoos: 400,
+};
+
 const POLICE_WRONG_POINTS = 0;
-const SIPAHI_POINTS = 300;
-const CHOR_CORRECT_POINTS = 0;
-const CHOR_WRONG_POINTS = 500;
+const CHOR_ESCAPE_POINTS = 800;
 
 export function calculateScores(input: ScoreInput): ScoreOutput {
   const { chosenId, roles } = input;
-  const chosenRole = roles[chosenId];
 
-  const isCorrect = chosenRole === "chor";
+  const isCorrect = roles[chosenId] === "chor";
 
   const scores: Record<string, number> = {};
 
   for (const [playerId, role] of Object.entries(roles)) {
-    switch (role) {
-      case "raja":
-        scores[playerId] = RAJA_POINTS;
-        break;
-      case "police":
-        scores[playerId] = isCorrect ? POLICE_CORRECT_POINTS : POLICE_WRONG_POINTS;
-        break;
-      case "chor":
-        scores[playerId] = isCorrect ? CHOR_CORRECT_POINTS : CHOR_WRONG_POINTS;
-        break;
-      case "sipahi":
-        scores[playerId] = SIPAHI_POINTS;
-        break;
-    }
+    let points = ROLE_POINTS[role] ?? 0;
+    if (role === "police" && !isCorrect) points = POLICE_WRONG_POINTS;
+    if (role === "chor" && !isCorrect) points = CHOR_ESCAPE_POINTS;
+    scores[playerId] = points;
   }
 
   return { scores, isCorrect };

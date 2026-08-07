@@ -1,29 +1,59 @@
 import type { GameRole } from "../types";
+import { ALL_ROLES, MAX_PLAYERS, MIN_PLAYERS } from "../game/roles";
 import backcard from "../assets/backcard.jpg";
 import raja from "../assets/raja.jpg";
 import police from "../assets/police.jpg";
 import sipahi from "../assets/sipahi.jpg";
 import chor from "../assets/chor.jpg";
+import daku from "../assets/daku.svg";
+import joker from "../assets/joker.svg";
+import aamAadmi from "../assets/aam-aadmi.svg";
+import jasoos from "../assets/jasoos.svg";
+
+export { MAX_PLAYERS, MIN_PLAYERS, ALL_ROLES };
 
 export const ROLE_POINTS: Record<GameRole, number> = {
   raja: 1000,
-  police: 500,
+  police: 800,
+  sipahi: 600,
   chor: 0,
-  sipahi: 300,
+  daku: 200,
+  joker: 300,
+  "aam-aadmi": 100,
+  jasoos: 400,
 };
 
 export const ROLE_LABELS: Record<GameRole, string> = {
   raja: "Raja",
   police: "Police",
-  chor: "Chor",
   sipahi: "Sipahi",
+  chor: "Chor",
+  daku: "Daku",
+  joker: "Joker",
+  "aam-aadmi": "Aam Aadmi",
+  jasoos: "Jasoos",
+};
+
+export const ROLE_EMOJIS: Record<GameRole, string> = {
+  raja: "👑",
+  police: "👮",
+  sipahi: "🪖",
+  chor: "🥷",
+  daku: "🦹",
+  joker: "🤡",
+  "aam-aadmi": "👤",
+  jasoos: "🕵️",
 };
 
 export const ROLE_COLORS: Record<GameRole, string> = {
   raja: "#ffd700",
   police: "#7c3aed",
-  chor: "#ef4444",
   sipahi: "#f59e0b",
+  chor: "#ef4444",
+  daku: "#ec4899",
+  joker: "#22d3ee",
+  "aam-aadmi": "#94a3b8",
+  jasoos: "#10b981",
 };
 
 export const CARD_IMAGES: Record<GameRole, string> & { hidden: string } = {
@@ -32,20 +62,27 @@ export const CARD_IMAGES: Record<GameRole, string> & { hidden: string } = {
   police,
   sipahi,
   chor,
+  daku,
+  joker,
+  "aam-aadmi": aamAadmi,
+  jasoos,
 };
 
-export const MAX_PLAYERS = 4;
 export const ROOM_CODE_LENGTH = 6;
 
 export const SCORING = {
   RAJA_CORRECT: 1000,
-  POLICE_CORRECT: 500,
-  SIPAHI_CORRECT: 300,
+  POLICE_CORRECT: 800,
+  SIPAHI_CORRECT: 600,
   CHOR_CORRECT: 0,
+  DAKU_POINTS: 200,
+  JOKER_POINTS: 300,
+  AAM_AADMI_POINTS: 100,
+  JASOOS_POINTS: 400,
   RAJA_WRONG: 1000,
   POLICE_WRONG: 0,
-  SIPAHI_WRONG: 300,
-  CHOR_WRONG: 500,
+  SIPAHI_WRONG: 600,
+  CHOR_WRONG: 800,
 } as const;
 
 export const PHASE_DURATIONS = {

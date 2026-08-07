@@ -8,7 +8,7 @@ import { canTransition } from "./gameStateMachine";
 
 /**
  * Checks if the game can start (called by host).
- * Conditions: exactly 4 players, all connected, all ready.
+ * Conditions: 4-8 players, all connected, all ready.
  */
 export function canStartGame(_players: GamePlayer[]): ValidationResult {
   // TODO: Implement in Batch 3

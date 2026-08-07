@@ -1,7 +1,6 @@
 import type { GameRole } from "../types";
 import type { RoleDistribution, RoleHistory } from "./types";
-
-const ROLES: GameRole[] = ["raja", "police", "chor", "sipahi"];
+import { getRolePool, MAX_PLAYERS, MIN_PLAYERS } from "./roles";
 
 /**
  * Deficit-based fair role rotation.
@@ -35,10 +34,11 @@ export function distributeRoles(
   roleHistory: RoleHistory[],
   roundNumber: number
 ): RoleDistribution {
-  if (playerIds.length !== 4) {
-    throw new Error("Need exactly 4 players");
+  if (playerIds.length < MIN_PLAYERS || playerIds.length > MAX_PLAYERS) {
+    throw new Error(`Need between ${MIN_PLAYERS} and ${MAX_PLAYERS} players`);
   }
 
+  const roles = getRolePool(playerIds.length);
   const historyMap = new Map<string, GameRole[]>();
   for (const h of roleHistory) {
     historyMap.set(h.playerId, h.roles);
@@ -46,7 +46,7 @@ export function distributeRoles(
 
   // First round — purely random
   if (roundNumber === 0) {
-    const shuffledRoles = shuffleArray(ROLES);
+    const shuffledRoles = shuffleArray(roles);
     const assignments: Record<string, GameRole> = {};
     for (let i = 0; i < playerIds.length; i++) {
       assignments[playerIds[i]] = shuffledRoles[i];
@@ -67,7 +67,7 @@ export function distributeRoles(
   for (const pid of playerIds) {
     const history = historyMap.get(pid) ?? [];
     const deficits = new Map<GameRole, number>();
-    for (const role of ROLES) {
+    for (const role of roles) {
       const expected = (roundNumber + 1) / playerIds.length;
       const actual = countRole(history, role);
       deficits.set(role, expected - actual);
@@ -79,7 +79,7 @@ export function distributeRoles(
   // who hasn't been assigned yet and who didn't have this role last round
   const assignments: Record<string, GameRole> = {};
   const assigned = new Set<string>();
-  const rolesToAssign = shuffleArray(ROLES);
+  const rolesToAssign = shuffleArray(roles);
 
   for (const role of rolesToAssign) {
     const candidates = playerIds
@@ -107,11 +107,12 @@ export function calculateDeficit(
   playerId: string,
   role: GameRole,
   history: RoleHistory[],
-  totalRounds: number
+  totalRounds: number,
+  rolePoolSize = MAX_PLAYERS
 ): number {
   const h = history.find((x) => x.playerId === playerId);
   const actual = h ? countRole(h.roles, role) : 0;
-  const expected = totalRounds / 4;
+  const expected = totalRounds / rolePoolSize;
   return expected - actual;
 }
 

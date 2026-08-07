@@ -54,7 +54,7 @@ export function useRoom() {
   }, [socket, reset]);
 
   const toggleReady = useCallback(() => {
-    if (!socket) return;
+    if (!socket || !playerId) return;
     const player = room?.players.find((p) => p.id === playerId);
     const targetReady = !(player?.isReady ?? false);
     useRoomStore.getState().updatePlayer(playerId, { isReady: targetReady });

@@ -6,6 +6,7 @@ import type { RoleHistory } from "./types.js";
 import { calculateScores } from "./scoreCalculator.js";
 import { buildGameResult } from "./winnerCalculator.js";
 import { calculatePlayerStats } from "./statisticsManager.js";
+import { ALL_ROLES, emptyRoleCounts, MAX_PLAYERS, MIN_PLAYERS } from "./roles.js";
 
 export interface EngineEvent {
   event: string;
@@ -75,8 +76,12 @@ export function startGame(room: Room, player: Player): EngineResult {
   const hostErr = validateHost(room, player);
   if (hostErr) return hostErr;
 
-  if (room.players.length !== 4 || !room.players.every((p) => p.isReady || p.isHost)) {
-    return invalid("Need 4 players, all ready", "INVALID_STATE");
+  if (
+    room.players.length < MIN_PLAYERS ||
+    room.players.length > MAX_PLAYERS ||
+    !room.players.every((p) => p.isReady || p.isHost)
+  ) {
+    return invalid(`Need ${MIN_PLAYERS}-${MAX_PLAYERS} players, all ready`, "INVALID_STATE");
   }
 
   for (const p of room.players) {
@@ -400,10 +405,12 @@ export function endGame(room: Room, player: Player): EngineResult {
       p.statistics.highestScore = playerStats[p.id].highestScore;
     }
     p.statistics.totalScore += playerStats[p.id].totalScore;
-    p.statistics.timesRaja += playerStats[p.id].timesRaja;
-    p.statistics.timesPolice += playerStats[p.id].timesPolice;
-    p.statistics.timesChor += playerStats[p.id].timesChor;
-    p.statistics.timesSipahi += playerStats[p.id].timesSipahi;
+    if (!p.statistics.timesRole) {
+      p.statistics.timesRole = emptyRoleCounts();
+    }
+    for (const role of ALL_ROLES) {
+      p.statistics.timesRole[role] += playerStats[p.id].timesRole[role];
+    }
     p.statistics.correctGuesses += playerStats[p.id].correctGuesses;
     p.statistics.wrongGuesses += playerStats[p.id].wrongGuesses;
     p.statistics.averageScore = p.statistics.totalScore / Math.max(1, p.statistics.gamesPlayed);

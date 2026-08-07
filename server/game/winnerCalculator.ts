@@ -1,5 +1,6 @@
 import type { GameRole } from "../shared/socket/types.js";
 import type { RoundHistoryEntry } from "../shared/socket/types.js";
+import { emptyRoleCounts } from "./roles.js";
 
 export interface LeaderboardEntry {
   playerId: string;
@@ -31,7 +32,7 @@ export function calculateLeaderboard(
     }
     for (const [playerId, role] of Object.entries(round.roles)) {
       if (!roleCounts[playerId]) {
-        roleCounts[playerId] = { raja: 0, police: 0, chor: 0, sipahi: 0 };
+        roleCounts[playerId] = emptyRoleCounts();
       }
       roleCounts[playerId][role]++;
     }
@@ -42,7 +43,7 @@ export function calculateLeaderboard(
       playerId,
       playerName: playerNames[playerId] ?? "Unknown",
       totalScore,
-      roleCounts: roleCounts[playerId] ?? { raja: 0, police: 0, chor: 0, sipahi: 0 },
+      roleCounts: roleCounts[playerId] ?? emptyRoleCounts(),
     }))
     .sort((a, b) => b.totalScore - a.totalScore);
 }

@@ -1,4 +1,5 @@
 import type { Player, Room } from "./types";
+import { emptyRoleCounts, MAX_PLAYERS, MIN_PLAYERS } from "../game/roles.js";
 
 const rooms = new Map<string, Room>();
 
@@ -67,10 +68,7 @@ export function createRoom(
           wins: 0,
           highestScore: 0,
           totalScore: 0,
-          timesRaja: 0,
-          timesPolice: 0,
-          timesChor: 0,
-          timesSipahi: 0,
+          timesRole: emptyRoleCounts(),
           correctGuesses: 0,
           wrongGuesses: 0,
           averageScore: 0,
@@ -98,7 +96,7 @@ export function joinRoom(
   if (room.phase !== "waiting") {
     return { room: null as unknown as Room, error: "Game already started" };
   }
-  if (room.players.length >= 4) {
+  if (room.players.length >= MAX_PLAYERS) {
     return { room: null as unknown as Room, error: "Room is full" };
   }
   if (room.players.some((p) => p.name.toLowerCase() === playerName.toLowerCase())) {
@@ -124,16 +122,13 @@ export function joinRoom(
       statistics: {
         gamesPlayed: 0,
         wins: 0,
-      highestScore: 0,
-      totalScore: 0,
-      timesRaja: 0,
-      timesPolice: 0,
-      timesChor: 0,
-      timesSipahi: 0,
-      correctGuesses: 0,
-      wrongGuesses: 0,
-      averageScore: 0,
-    },
+        highestScore: 0,
+        totalScore: 0,
+        timesRole: emptyRoleCounts(),
+        correctGuesses: 0,
+        wrongGuesses: 0,
+        averageScore: 0,
+      },
   };
 
   room.players.push(player);
@@ -245,7 +240,8 @@ export function destroyRoom(code: string): void {
 
 export function canStartGame(room: Room): boolean {
   return (
-    room.players.length === 4 &&
+    room.players.length >= MIN_PLAYERS &&
+    room.players.length <= MAX_PLAYERS &&
     room.players.every((p) => p.isReady || p.isHost)
   );
 }
